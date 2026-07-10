@@ -1,7 +1,7 @@
---!native
+﻿--!native
 --!optimize 2
 -- ============================================================
--- NexusCopy v1.0 — Advanced Roblox Map Copier
+-- SMARTCOPY v1.0 — Advanced Roblox Map Copier
 -- Full map extraction: terrain, meshes, textures, assets,
 -- scripts, Remote reconstruction, nil instances
 -- 
@@ -17,8 +17,8 @@
 --   })
 -- ============================================================
 
-local NEXUSCOPY_VERSION = "1.0.0"
-local REPO_BASE = "https://raw.githubusercontent.com/nightmarescriptsatu-png/NexusCopy/main/"
+local SMARTCOPY_VERSION = "1.0.0"
+local REPO_BASE = "https://raw.githubusercontent.com/nightmarescriptsatu-png/SMARTCOPY/main/"
 
 -- ============================================================
 -- Module Loader
@@ -29,16 +29,16 @@ local function loadModule(name)
 	local ok, module = pcall(function()
 		return loadstring(
 			game:HttpGet(REPO_BASE .. "modules/" .. name .. ".luau", true),
-			"NexusCopy/" .. name
+			"SMARTCOPY/" .. name
 		)()
 	end)
 
 	if ok and module then
-		print("[NexusCopy] Loaded module: " .. name)
+		print("[SMARTCOPY] Loaded module: " .. name)
 		return module
 	end
 
-	warn("[NexusCopy] Failed to load module from repo: " .. name)
+	warn("[SMARTCOPY] Failed to load module from repo: " .. name)
 	return nil
 end
 
@@ -55,11 +55,11 @@ local function loadUSSI()
 	end)
 
 	if ok and synsaveinstance then
-		print("[NexusCopy] Loaded USSI saveinstance engine")
+		print("[SMARTCOPY] Loaded USSI saveinstance engine")
 		return synsaveinstance
 	end
 
-	warn("[NexusCopy] Failed to load USSI!")
+	warn("[SMARTCOPY] Failed to load USSI!")
 	return nil
 end
 
@@ -86,7 +86,7 @@ return function(userOptions)
 		IgnoreSharedStrings = userOptions.IgnoreSharedStrings or false, -- try disabled for fuller save
 		FilePath = userOptions.FilePath or false,
 
-		-- NexusCopy extensions
+		-- SMARTCOPY extensions
 		IncludeTerrain = userOptions.IncludeTerrain ~= false, -- default true
 		IncludeAssets = userOptions.IncludeAssets ~= false,   -- default true
 		ServerSpy = userOptions.ServerSpy or false,           -- default false (needs time)
@@ -97,7 +97,7 @@ return function(userOptions)
 	local startTime = os.clock()
 
 	print("╔══════════════════════════════════════════════════════════╗")
-	print("║              ⚡ NexusCopy v" .. NEXUSCOPY_VERSION .. "                       ║")
+	print("║              ⚡ SMARTCOPY v" .. SMARTCOPY_VERSION .. "                       ║")
 	print("║          Advanced Roblox Map Copier                     ║")
 	print("╚══════════════════════════════════════════════════════════╝")
 	print("")
@@ -109,7 +109,7 @@ return function(userOptions)
 	if options.ShowStatus then
 		pcall(function()
 			local screenGui = Instance.new("ScreenGui")
-			screenGui.Name = "NexusCopyStatus"
+			screenGui.Name = "SMARTCOPYStatus"
 			screenGui.DisplayOrder = 999999
 			screenGui.ResetOnSpawn = false
 
@@ -134,7 +134,7 @@ return function(userOptions)
 			title.Size = UDim2.new(1, -20, 0, 25)
 			title.Position = UDim2.new(0, 10, 0, 8)
 			title.BackgroundTransparency = 1
-			title.Text = "⚡ NexusCopy v" .. NEXUSCOPY_VERSION
+			title.Text = "⚡ SMARTCOPY v" .. SMARTCOPY_VERSION
 			title.TextColor3 = Color3.fromRGB(140, 100, 255)
 			title.TextSize = 16
 			title.Font = Enum.Font.GothamBold
@@ -207,7 +207,7 @@ return function(userOptions)
 	local serverSpy
 	if options.ServerSpy then
 		updateUI("Phase 1/5: Starting ServerSpy...", 0, "Intercepting Remote communications")
-		print("[NexusCopy] Phase 1: Starting ServerSpy monitoring...")
+		print("[SMARTCOPY] Phase 1: Starting ServerSpy monitoring...")
 
 		-- Try loading ServerSpy module
 		local ok, mod = pcall(loadModule, "ServerSpy")
@@ -216,7 +216,7 @@ return function(userOptions)
 			serverSpy:Start()
 
 			-- Let it monitor for the specified duration
-			print(string.format("[NexusCopy] ServerSpy active — monitoring for %ds...", options.ServerSpyDuration))
+			print(string.format("[SMARTCOPY] ServerSpy active — monitoring for %ds...", options.ServerSpyDuration))
 			updateUI("Phase 1/5: Monitoring remotes...", 0.05,
 				string.format("Listening for %ds — play the game normally!", options.ServerSpyDuration))
 
@@ -228,9 +228,9 @@ return function(userOptions)
 			end
 
 			serverSpy:Stop()
-			print("[NexusCopy] ServerSpy monitoring complete!")
+			print("[SMARTCOPY] ServerSpy monitoring complete!")
 		else
-			print("[NexusCopy] ServerSpy module not available, skipping...")
+			print("[SMARTCOPY] ServerSpy module not available, skipping...")
 		end
 	end
 
@@ -240,7 +240,7 @@ return function(userOptions)
 	local terrainData
 	if options.IncludeTerrain then
 		updateUI("Phase 2/5: Extracting terrain...", 0.15, "Reading voxel data...")
-		print("[NexusCopy] Phase 2: Extracting terrain voxels...")
+		print("[SMARTCOPY] Phase 2: Extracting terrain voxels...")
 
 		local ok, mod = pcall(loadModule, "TerrainExtractor")
 		if ok and mod then
@@ -256,15 +256,15 @@ return function(userOptions)
 			-- Serialize terrain to file
 			local terrainScript = terrainExtractor:SerializeForReplay()
 			if terrainScript and #terrainScript > 100 then
-				local terrainPath = "NexusCopy_Terrain.luau"
+				local terrainPath = "SMARTCOPY_Terrain.luau"
 				pcall(writefile, terrainPath, terrainScript)
-				print("[NexusCopy] Terrain saved to: " .. terrainPath)
+				print("[SMARTCOPY] Terrain saved to: " .. terrainPath)
 				terrainData = terrainExtractor:GetStats()
 			else
-				print("[NexusCopy] No significant terrain detected")
+				print("[SMARTCOPY] No significant terrain detected")
 			end
 		else
-			print("[NexusCopy] TerrainExtractor not available, skipping...")
+			print("[SMARTCOPY] TerrainExtractor not available, skipping...")
 		end
 	end
 
@@ -274,7 +274,7 @@ return function(userOptions)
 	local assetData
 	if options.IncludeAssets then
 		updateUI("Phase 3/5: Scanning assets...", 0.3, "Finding meshes, textures, audio...")
-		print("[NexusCopy] Phase 3: Scanning for assets...")
+		print("[SMARTCOPY] Phase 3: Scanning for assets...")
 
 		local ok, mod = pcall(loadModule, "AssetRipper")
 		if ok and mod then
@@ -285,23 +285,23 @@ return function(userOptions)
 			end)
 
 			assetData = assetRipper:GetStats()
-			print(string.format("[NexusCopy] Assets found — Total: %d", assetData._total or 0))
+			print(string.format("[SMARTCOPY] Assets found — Total: %d", assetData._total or 0))
 
 			-- Save asset manifest
 			local manifest = assetRipper:ExportManifestJSON()
 			if manifest then
-				pcall(writefile, "NexusCopy_Assets.json", manifest)
-				print("[NexusCopy] Asset manifest saved to: NexusCopy_Assets.json")
+				pcall(writefile, "SMARTCOPY_Assets.json", manifest)
+				print("[SMARTCOPY] Asset manifest saved to: SMARTCOPY_Assets.json")
 			end
 
 			-- Generate download script if requested
 			if options.DownloadAssets then
 				local dlScript = assetRipper:GenerateDownloadScript()
-				pcall(writefile, "NexusCopy_Download.ps1", dlScript)
-				print("[NexusCopy] Download script saved to: NexusCopy_Download.ps1")
+				pcall(writefile, "SMARTCOPY_Download.ps1", dlScript)
+				print("[SMARTCOPY] Download script saved to: SMARTCOPY_Download.ps1")
 			end
 		else
-			print("[NexusCopy] AssetRipper not available, skipping...")
+			print("[SMARTCOPY] AssetRipper not available, skipping...")
 		end
 	end
 
@@ -310,7 +310,7 @@ return function(userOptions)
 	-- The core map save — this is the big one
 	-- ========================================
 	updateUI("Phase 4/5: Saving instance tree...", 0.4, "This is the main save — may take a while!")
-	print("[NexusCopy] Phase 4: Running SaveInstance (USSI engine)...")
+	print("[SMARTCOPY] Phase 4: Running SaveInstance (USSI engine)...")
 
 	local synsaveinstance = loadUSSI()
 	if synsaveinstance then
@@ -336,12 +336,12 @@ return function(userOptions)
 		-- Run saveinstance
 		local saveOk, saveErr = pcall(synsaveinstance, ussiOptions)
 		if saveOk then
-			print("[NexusCopy] SaveInstance complete!")
+			print("[SMARTCOPY] SaveInstance complete!")
 		else
-			warn("[NexusCopy] SaveInstance error: " .. tostring(saveErr))
+			warn("[SMARTCOPY] SaveInstance error: " .. tostring(saveErr))
 		end
 	else
-		warn("[NexusCopy] CRITICAL: Could not load USSI engine!")
+		warn("[SMARTCOPY] CRITICAL: Could not load USSI engine!")
 	end
 
 	-- ========================================
@@ -349,11 +349,11 @@ return function(userOptions)
 	-- ========================================
 	if serverSpy then
 		updateUI("Phase 5/5: Generating server stubs...", 0.9, "Reconstructing server logic...")
-		print("[NexusCopy] Phase 5: Generating server script stubs...")
+		print("[SMARTCOPY] Phase 5: Generating server script stubs...")
 
 		-- Save ServerSpy report
 		local report = serverSpy:ExportReport()
-		pcall(writefile, "NexusCopy_ServerSpy_Report.txt", report)
+		pcall(writefile, "SMARTCOPY_ServerSpy_Report.txt", report)
 
 		-- Save individual server stubs
 		local stubs = serverSpy:GenerateServerStubs()
@@ -364,14 +364,14 @@ return function(userOptions)
 				table.insert(allStubs, stub.sourceCode)
 				table.insert(allStubs, "\n")
 			end
-			pcall(writefile, "NexusCopy_ServerStubs.lua", table.concat(allStubs, "\n"))
-			print(string.format("[NexusCopy] Generated %d server script stubs", #stubs))
+			pcall(writefile, "SMARTCOPY_ServerStubs.lua", table.concat(allStubs, "\n"))
+			print(string.format("[SMARTCOPY] Generated %d server script stubs", #stubs))
 		end
 
 		-- Save spawned instances list
 		local spawned = serverSpy:GetSpawnedInstances()
 		if #spawned > 0 then
-			print(string.format("[NexusCopy] Captured %d server-spawned instances", #spawned))
+			print(string.format("[SMARTCOPY] Captured %d server-spawned instances", #spawned))
 		end
 	end
 
@@ -385,7 +385,7 @@ return function(userOptions)
 
 	print("")
 	print("╔══════════════════════════════════════════════════════════╗")
-	print("║              ⚡ NexusCopy — COMPLETE                    ║")
+	print("║              ⚡ SMARTCOPY — COMPLETE                    ║")
 	print("╠══════════════════════════════════════════════════════════╣")
 	print(string.format("║  Time: %-47s  ║", timeStr))
 
@@ -408,22 +408,22 @@ return function(userOptions)
 	print("║  Output files:                                          ║")
 	print("║    • [game].rbxlx — Full instance tree                  ║")
 	if terrainData then
-		print("║    • NexusCopy_Terrain.luau — Terrain restore script    ║")
+		print("║    • SMARTCOPY_Terrain.luau — Terrain restore script    ║")
 	end
 	if assetData then
-		print("║    • NexusCopy_Assets.json — Asset manifest             ║")
+		print("║    • SMARTCOPY_Assets.json — Asset manifest             ║")
 	end
 	if options.DownloadAssets then
-		print("║    • NexusCopy_Download.ps1 — Asset download script     ║")
+		print("║    • SMARTCOPY_Download.ps1 — Asset download script     ║")
 	end
 	if serverSpy then
-		print("║    • NexusCopy_ServerSpy_Report.txt — Remote logs       ║")
-		print("║    • NexusCopy_ServerStubs.lua — Server script stubs    ║")
+		print("║    • SMARTCOPY_ServerSpy_Report.txt — Remote logs       ║")
+		print("║    • SMARTCOPY_ServerStubs.lua — Server script stubs    ║")
 	end
 	print("╚══════════════════════════════════════════════════════════╝")
 
 	-- Update UI with completion
-	updateUI("✅ NexusCopy Complete!", 1, string.format("Done in %s • Check executor workspace folder", timeStr))
+	updateUI("✅ SMARTCOPY Complete!", 1, string.format("Done in %s • Check executor workspace folder", timeStr))
 
 	-- Auto-destroy UI after 30 seconds
 	task.delay(30, function()

@@ -1,7 +1,7 @@
---!optimize 2
--- NexusCopy Utilities Module
--- Shared helpers for all NexusCopy modules
--- https://github.com/nexuscopy
+﻿--!optimize 2
+-- SMARTCOPY Utilities Module
+-- Shared helpers for all SMARTCOPY modules
+-- https://github.com/SMARTCOPY
 
 local Utilities = {}
 
@@ -152,7 +152,7 @@ function Utilities.log(level, module, message)
 	table.insert(logBuffer, entry)
 
 	-- Also print to console
-	local prefix = string.format("[NexusCopy/%s] [%s]", module, level)
+	local prefix = string.format("[SMARTCOPY/%s] [%s]", module, level)
 	print(prefix, message)
 end
 
@@ -175,7 +175,7 @@ function Utilities.createStatusUI()
 	-- Create a simple status overlay
 	local ok, gui = pcall(function()
 		local screenGui = Instance.new("ScreenGui")
-		screenGui.Name = "NexusCopyStatus"
+		screenGui.Name = "SMARTCOPYStatus"
 		screenGui.DisplayOrder = 999999
 		screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 		screenGui.ResetOnSpawn = false
@@ -204,7 +204,7 @@ function Utilities.createStatusUI()
 		title.Size = UDim2.new(1, -20, 0, 25)
 		title.Position = UDim2.new(0, 10, 0, 8)
 		title.BackgroundTransparency = 1
-		title.Text = "⚡ NexusCopy"
+		title.Text = "⚡ SMARTCOPY"
 		title.TextColor3 = Color3.fromRGB(140, 100, 255)
 		title.TextSize = 16
 		title.Font = Enum.Font.GothamBold
