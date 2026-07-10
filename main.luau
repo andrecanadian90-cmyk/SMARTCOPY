@@ -13,7 +13,8 @@
 -- With custom options:
 --   loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/main.luau", true))()({
 --       mode = "full",
---       IncludeTerrain = true,
+--       FixUnions = true,
+--       IncludeTerrain = false,
 --       IncludeAssets = true,
 --       DownloadAssets = true,
 --       ServerSpy = true,
@@ -21,6 +22,7 @@
 --       Decompile = true,
 --       NilInstances = true,
 --       SafeMode = true,
+--       ReplaceWatermark = true,
 --   })
 -- ============================================================
 
@@ -29,10 +31,9 @@ local REPO_BASE = "https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTC
 
 -- ============================================================
 -- Module Loader
--- Loads modules from GitHub or uses bundled versions
+-- Loads modules from GitHub
 -- ============================================================
 local function loadModule(name)
-	-- Try loading from repo
 	local ok, module = pcall(function()
 		return loadstring(
 			game:HttpGet(REPO_BASE .. "modules/" .. name .. ".luau", true),
@@ -80,9 +81,9 @@ return function(userOptions)
 	local options = {
 		-- Save Instance options (passed to USSI)
 		mode = userOptions.mode or "full",
-		SafeMode = userOptions.SafeMode ~= false, -- default true
+		SafeMode = userOptions.SafeMode ~= false, -- default true (USSI kicks player for clean save)
 		Decompile = userOptions.Decompile ~= false, -- default true
-		DecompileTimeout = userOptions.DecompileTimeout or 15,
+		DecompileTimeout = userOptions.DecompileTimeout or 30,
 		NilInstances = userOptions.NilInstances ~= false, -- default true
 		IgnoreDefaultProperties = userOptions.IgnoreDefaultProperties ~= false,
 		IgnoreNotArchivable = userOptions.IgnoreNotArchivable ~= false,
@@ -90,15 +91,17 @@ return function(userOptions)
 		IsolateLocalPlayer = userOptions.IsolateLocalPlayer ~= false,
 		SaveBytecode = userOptions.SaveBytecode or false,
 		ShowStatus = userOptions.ShowStatus ~= false,
-		IgnoreSharedStrings = userOptions.IgnoreSharedStrings or false, -- try disabled for fuller save
+		IgnoreSharedStrings = userOptions.IgnoreSharedStrings or false,
 		FilePath = userOptions.FilePath or false,
 
 		-- SMARTCOPY extensions
-		IncludeTerrain = userOptions.IncludeTerrain ~= false, -- default true
-		IncludeAssets = userOptions.IncludeAssets ~= false,   -- default true
-		ServerSpy = userOptions.ServerSpy or false,           -- default false (needs time)
+		FixUnions = userOptions.FixUnions ~= false,             -- default true
+		IncludeTerrain = userOptions.IncludeTerrain or false,    -- default false
+		IncludeAssets = userOptions.IncludeAssets ~= false,      -- default true
+		ServerSpy = userOptions.ServerSpy or false,              -- default false (requires duration wait)
 		ServerSpyDuration = userOptions.ServerSpyDuration or 60, -- seconds to monitor
-		DownloadAssets = userOptions.DownloadAssets or false,  -- generate download script
+		DownloadAssets = userOptions.DownloadAssets or false,     -- generate download script
+		ReplaceWatermark = userOptions.ReplaceWatermark ~= false,   -- default true
 	}
 
 	local startTime = os.clock()
@@ -208,31 +211,31 @@ return function(userOptions)
 		end)
 	end
 
+	local totalPhases = 5
+	if options.ServerSpy then totalPhases += 1 end
+	if options.FixUnions then totalPhases += 1 end
+	local currentPhase = 1
+
 	-- ========================================
 	-- Phase 1: ServerSpy (if enabled)
-	-- Must start FIRST to capture activity
+	-- Must start FIRST to capture activity before save kicks us
 	-- ========================================
 	local serverSpy
 	if options.ServerSpy then
-		updateUI("Phase 1/5: Starting ServerSpy...", 0, "Intercepting Remote communications")
-		print("[SMARTCOPY] Phase 1: Starting ServerSpy monitoring...")
+		updateUI(string.format("Phase %d/%d: Starting ServerSpy...", currentPhase, totalPhases), 0, "Intercepting Remote communications")
+		print("[SMARTCOPY] Phase: Starting ServerSpy monitoring...")
 
-		-- Try loading ServerSpy module
 		local ok, mod = pcall(loadModule, "ServerSpy")
 		if ok and mod then
 			serverSpy = mod
 			serverSpy:Start()
 
-			-- Let it monitor for the specified duration
 			print(string.format("[SMARTCOPY] ServerSpy active — monitoring for %ds...", options.ServerSpyDuration))
-			updateUI("Phase 1/5: Monitoring remotes...", 0.05,
-				string.format("Listening for %ds — play the game normally!", options.ServerSpyDuration))
-
 			for i = 1, options.ServerSpyDuration do
 				task.wait(1)
-				updateUI(nil, 0.05 + (i / options.ServerSpyDuration) * 0.1,
-					string.format("Monitoring... %ds/%ds — %d calls captured",
-						i, options.ServerSpyDuration, #serverSpy:GetLogs()))
+				updateUI(string.format("Phase %d/%d: Monitoring remotes...", currentPhase, totalPhases), (i / options.ServerSpyDuration) * 0.15,
+					string.format("Listening for %ds — play the game normally!\nCaptured: %d calls",
+						options.ServerSpyDuration - i, #serverSpy:GetLogs()))
 			end
 
 			serverSpy:Stop()
@@ -240,89 +243,102 @@ return function(userOptions)
 		else
 			print("[SMARTCOPY] ServerSpy module not available, skipping...")
 		end
+		currentPhase += 1
 	end
 
 	-- ========================================
-	-- Phase 2: Terrain Extraction
+	-- Phase 2: Fix Unions (if enabled)
+	-- Must run before USSI save to preserve models
+	-- ========================================
+	if options.FixUnions then
+		updateUI(string.format("Phase %d/%d: Fixing Unions...", currentPhase, totalPhases), 0.2, "Converting UnionOperations to MeshParts")
+		print("[SMARTCOPY] Phase: Converting Unions to MeshParts...")
+
+		local ok, mod = pcall(loadModule, "UnionFixer")
+		if ok and mod then
+			local stats = mod:Run({workspace})
+			print(string.format("[SMARTCOPY] UnionFixer done: converted %d unions", stats.converted or 0))
+		else
+			print("[SMARTCOPY] UnionFixer module not available, skipping...")
+		end
+		currentPhase += 1
+	end
+
+	-- ========================================
+	-- Phase 3: Terrain Extraction
 	-- ========================================
 	local terrainData
 	if options.IncludeTerrain then
-		updateUI("Phase 2/5: Extracting terrain...", 0.15, "Reading voxel data...")
-		print("[SMARTCOPY] Phase 2: Extracting terrain voxels...")
+		updateUI(string.format("Phase %d/%d: Extracting terrain...", currentPhase, totalPhases), 0.35, "Reading voxel data...")
+		print("[SMARTCOPY] Phase: Extracting terrain voxels...")
 
 		local ok, mod = pcall(loadModule, "TerrainExtractor")
 		if ok and mod then
 			local terrainExtractor = mod
 			terrainExtractor:Extract({
 				onProgress = function(pct)
-					updateUI(nil, 0.15 + pct * 0.15,
-						string.format("Terrain: %.0f%% — %d non-empty chunks",
+					updateUI(nil, 0.35 + pct * 0.1,
+						string.format("Terrain: %.0f%% — %d chunks",
 							pct * 100, terrainExtractor:GetStats().nonEmptyChunks))
 				end,
 			})
 
-			-- Serialize terrain to file
 			local terrainScript = terrainExtractor:SerializeForReplay()
 			if terrainScript and #terrainScript > 100 then
 				local terrainPath = "SMARTCOPY_Terrain.luau"
 				pcall(writefile, terrainPath, terrainScript)
 				print("[SMARTCOPY] Terrain saved to: " .. terrainPath)
 				terrainData = terrainExtractor:GetStats()
-			else
-				print("[SMARTCOPY] No significant terrain detected")
 			end
 		else
 			print("[SMARTCOPY] TerrainExtractor not available, skipping...")
 		end
+		currentPhase += 1
 	end
 
 	-- ========================================
-	-- Phase 3: Asset Scanning
+	-- Phase 4: Asset Scanning
 	-- ========================================
 	local assetData
 	if options.IncludeAssets then
-		updateUI("Phase 3/5: Scanning assets...", 0.3, "Finding meshes, textures, audio...")
-		print("[SMARTCOPY] Phase 3: Scanning for assets...")
+		updateUI(string.format("Phase %d/%d: Scanning assets...", currentPhase, totalPhases), 0.5, "Finding meshes, textures, audio...")
+		print("[SMARTCOPY] Phase: Scanning for assets...")
 
 		local ok, mod = pcall(loadModule, "AssetRipper")
 		if ok and mod then
 			local assetRipper = mod
 			assetRipper:Scan(nil, function(pct)
-				updateUI(nil, 0.3 + pct * 0.1,
+				updateUI(nil, 0.5 + pct * 0.1,
 					string.format("Scanning assets: %.0f%%", pct * 100))
 			end)
 
 			assetData = assetRipper:GetStats()
-			print(string.format("[SMARTCOPY] Assets found — Total: %d", assetData._total or 0))
+			print(string.format("[SMARTCOPY] Assets found: %d", assetData._total or 0))
 
-			-- Save asset manifest
 			local manifest = assetRipper:ExportManifestJSON()
 			if manifest then
 				pcall(writefile, "SMARTCOPY_Assets.json", manifest)
-				print("[SMARTCOPY] Asset manifest saved to: SMARTCOPY_Assets.json")
 			end
 
-			-- Generate download script if requested
 			if options.DownloadAssets then
 				local dlScript = assetRipper:GenerateDownloadScript()
 				pcall(writefile, "SMARTCOPY_Download.ps1", dlScript)
-				print("[SMARTCOPY] Download script saved to: SMARTCOPY_Download.ps1")
 			end
 		else
 			print("[SMARTCOPY] AssetRipper not available, skipping...")
 		end
+		currentPhase += 1
 	end
 
 	-- ========================================
-	-- Phase 4: Save Instance (USSI)
-	-- The core map save — this is the big one
+	-- Phase 5: Save Instance (USSI)
+	-- The core map save — this kicks player if SafeMode = true
 	-- ========================================
-	updateUI("Phase 4/5: Saving instance tree...", 0.4, "This is the main save — may take a while!")
-	print("[SMARTCOPY] Phase 4: Running SaveInstance (USSI engine)...")
+	updateUI(string.format("Phase %d/%d: Saving instance tree...", currentPhase, totalPhases), 0.7, "This is the main save — player may be kicked for safety!")
+	print("[SMARTCOPY] Phase: Running SaveInstance (USSI engine)...")
 
 	local synsaveinstance = loadUSSI()
 	if synsaveinstance then
-		-- Build USSI options from our options
 		local ussiOptions = {
 			mode = options.mode,
 			SafeMode = options.SafeMode,
@@ -334,14 +350,13 @@ return function(userOptions)
 			SaveNotCreatable = options.SaveNotCreatable,
 			IsolateLocalPlayer = options.IsolateLocalPlayer,
 			SaveBytecode = options.SaveBytecode,
-			ShowStatus = false, -- we have our own UI
+			ShowStatus = false,
 			IgnoreSharedStrings = options.IgnoreSharedStrings,
 			FilePath = options.FilePath,
 			ReadMe = true,
 			AntiIdle = true,
 		}
 
-		-- Run saveinstance
 		local saveOk, saveErr = pcall(synsaveinstance, ussiOptions)
 		if saveOk then
 			print("[SMARTCOPY] SaveInstance complete!")
@@ -351,19 +366,36 @@ return function(userOptions)
 	else
 		warn("[SMARTCOPY] CRITICAL: Could not load USSI engine!")
 	end
+	currentPhase += 1
 
 	-- ========================================
-	-- Phase 5: Generate Server Stubs (if ServerSpy was used)
+	-- Phase 6: Watermark Replacer (if enabled)
+	-- Runs after save so it can modify saved script sources
+	-- ========================================
+	if options.ReplaceWatermark then
+		updateUI(string.format("Phase %d/%d: Branding scripts...", currentPhase, totalPhases), 0.85, "Applying 'copy by Ndrew' watermark")
+		print("[SMARTCOPY] Phase: Replacing watermarks...")
+
+		local ok, mod = pcall(loadModule, "WatermarkReplacer")
+		if ok and mod then
+			local stats = mod:Run()
+			print(string.format("[SMARTCOPY] WatermarkReplacer done: branded %d scripts", stats.replaced or 0))
+		else
+			print("[SMARTCOPY] WatermarkReplacer not available, skipping...")
+		end
+		currentPhase += 1
+	end
+
+	-- ========================================
+	-- Phase 7: Generate Server Stubs (if ServerSpy was used)
 	-- ========================================
 	if serverSpy then
-		updateUI("Phase 5/5: Generating server stubs...", 0.9, "Reconstructing server logic...")
-		print("[SMARTCOPY] Phase 5: Generating server script stubs...")
+		updateUI(string.format("Phase %d/%d: Generating server stubs...", currentPhase, totalPhases), 0.95, "Reconstructing server logic...")
+		print("[SMARTCOPY] Phase: Generating server script stubs...")
 
-		-- Save ServerSpy report
 		local report = serverSpy:ExportReport()
 		pcall(writefile, "SMARTCOPY_ServerSpy_Report.txt", report)
 
-		-- Save individual server stubs
 		local stubs = serverSpy:GenerateServerStubs()
 		if #stubs > 0 then
 			local allStubs = {}
@@ -373,13 +405,6 @@ return function(userOptions)
 				table.insert(allStubs, "\n")
 			end
 			pcall(writefile, "SMARTCOPY_ServerStubs.lua", table.concat(allStubs, "\n"))
-			print(string.format("[SMARTCOPY] Generated %d server script stubs", #stubs))
-		end
-
-		-- Save spawned instances list
-		local spawned = serverSpy:GetSpawnedInstances()
-		if #spawned > 0 then
-			print(string.format("[SMARTCOPY] Captured %d server-spawned instances", #spawned))
 		end
 	end
 
@@ -430,10 +455,8 @@ return function(userOptions)
 	end
 	print("╚══════════════════════════════════════════════════════════╝")
 
-	-- Update UI with completion
 	updateUI("✅ SMARTCOPY Complete!", 1, string.format("Done in %s • Check executor workspace folder", timeStr))
 
-	-- Auto-destroy UI after 30 seconds
 	task.delay(30, function()
 		if statusGui then pcall(function() statusGui:Destroy() end) end
 	end)
