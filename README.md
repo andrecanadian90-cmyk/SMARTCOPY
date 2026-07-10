@@ -1,9 +1,61 @@
-﻿# SMARTCOPY
+# SMARTCOPY
 
 ### copy by Ndrew | https://bernadaclub.my.id
 
 > **Game Copier & Server Reconstructor untuk Roblox**
 > Save, decompile, fix, dan rebuild game Roblox dari client-side dengan kualitas maximum.
+
+---
+
+## 🚀 CARA PAKAI (Copy-Paste ke Executor)
+
+### Cara 1: Loadstring (Recommended)
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/loader.luau"))()
+```
+> Menu GUI akan muncul di layar. Tinggal klik module yang mau dijalankan!
+
+### Cara 2: Jalankan Module Tertentu
+```lua
+-- UnionFixer (jalankan SEBELUM save)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/modules/UnionFixer.luau"))()
+
+-- ServerSpy (intercept semua remote)
+local ServerSpy = loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/modules/ServerSpy.luau"))()
+ServerSpy:Start()
+-- mainkan game 2-5 menit, lalu:
+ServerSpy:Stop()
+ServerSpy:CopyReport()
+
+-- DecompileChecker (retry decompile yg gagal)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/modules/DecompileChecker.luau"))()
+
+-- AssetRipper (scan semua asset ID)
+local AssetRipper = loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/modules/AssetRipper.luau"))()
+AssetRipper:Scan({workspace})
+AssetRipper:CopyReport()
+AssetRipper:CopyDownloadScript("python") -- atau "powershell"
+
+-- TerrainExtractor (extract terrain)
+local TerrainExtractor = loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/modules/TerrainExtractor.luau"))()
+TerrainExtractor:Extract()
+TerrainExtractor:CopyRestoreScript()
+
+-- WatermarkReplacer (ganti watermark USSI)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/modules/WatermarkReplacer.luau"))()
+```
+
+### Urutan Workflow Lengkap
+```
+1. Join game target dengan executor
+2. Execute: UnionFixer          → fix Union sebelum save
+3. Execute: USSI SaveInstance   → save game ke .rbxl
+4. Execute: DecompileChecker    → retry script gagal decompile
+5. Execute: WatermarkReplacer   → ganti branding
+6. Execute: ServerSpy           → mainkan game, capture remotes
+7. Execute: AssetRipper         → scan semua asset
+8. Execute: TerrainExtractor    → extract terrain (jika ada)
+```
 
 ---
 
