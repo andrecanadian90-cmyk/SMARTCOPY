@@ -1,24 +1,31 @@
-﻿--!native
+--!native
 --!optimize 2
 -- ============================================================
--- SMARTCOPY v1.0 — Advanced Roblox Map Copier
+-- SMARTCOPY v2.0 by Ndrew — Advanced Roblox Map Copier
+-- copy by Ndrew | https://bernadaclub.my.id
+--
 -- Full map extraction: terrain, meshes, textures, assets,
 -- scripts, Remote reconstruction, nil instances
 -- 
 -- Usage:
---   loadstring(game:HttpGet("YOUR_REPO_URL/main.luau", true))()
+--   loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/main.luau", true))()()
 -- 
--- Or with custom options:
---   loadstring(game:HttpGet("YOUR_REPO_URL/main.luau", true))()({
+-- With custom options:
+--   loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/main.luau", true))()({
+--       mode = "full",
 --       IncludeTerrain = true,
 --       IncludeAssets = true,
+--       DownloadAssets = true,
 --       ServerSpy = true,
 --       ServerSpyDuration = 60,
+--       Decompile = true,
+--       NilInstances = true,
+--       SafeMode = true,
 --   })
 -- ============================================================
 
-local SMARTCOPY_VERSION = "1.0.0"
-local REPO_BASE = "https://raw.githubusercontent.com/nightmarescriptsatu-png/SMARTCOPY/main/"
+local SMARTCOPY_VERSION = "2.0.0"
+local REPO_BASE = "https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/"
 
 -- ============================================================
 -- Module Loader
@@ -97,7 +104,8 @@ return function(userOptions)
 	local startTime = os.clock()
 
 	print("╔══════════════════════════════════════════════════════════╗")
-	print("║              ⚡ SMARTCOPY v" .. SMARTCOPY_VERSION .. "                       ║")
+	print("║          ⚡ SMARTCOPY v" .. SMARTCOPY_VERSION .. " by Ndrew                ║")
+	print("║          https://bernadaclub.my.id                      ║")
 	print("║          Advanced Roblox Map Copier                     ║")
 	print("╚══════════════════════════════════════════════════════════╝")
 	print("")

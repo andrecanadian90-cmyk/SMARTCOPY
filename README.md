@@ -9,7 +9,23 @@
 
 ## 🚀 CARA PAKAI (Copy-Paste ke Executor)
 
-### Cara 1: Loadstring (Recommended)
+### Cara 1: All-in-One (Recommended)
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/main.luau", true))()({
+    mode = "full",
+    IncludeTerrain = false,
+    IncludeAssets = true,
+    DownloadAssets = true,
+    ServerSpy = false,
+    ServerSpyDuration = 60,
+    Decompile = true,
+    NilInstances = true,
+    SafeMode = true,
+})
+```
+> Jalankan otomatis: Union fix → Save → Decompile → Asset scan → Terrain — dalam 1 script!
+
+### Cara 2: GUI Menu (Pilih Manual)
 ```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/loader.luau"))()
 ```
