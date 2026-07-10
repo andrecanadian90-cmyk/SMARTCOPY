@@ -15,7 +15,7 @@ Advanced Roblox Map Copier — copy full maps with terrain, meshes, textures, au
 
 ```lua
 loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/YOUR_USERNAME/NexusCopy/main/main.luau", 
+    "https://raw.githubusercontent.com/andrecanadian90-cmyk/NexusCopy/main/main.luau", 
     true
 ))()
 ```
@@ -24,7 +24,7 @@ loadstring(game:HttpGet(
 
 ```lua
 loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/YOUR_USERNAME/NexusCopy/main/main.luau", 
+    "https://raw.githubusercontent.com/andrecanadian90-cmyk/NexusCopy/main/main.luau", 
     true
 ))()({
     mode = "full",

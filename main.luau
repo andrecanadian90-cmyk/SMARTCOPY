@@ -18,7 +18,7 @@
 -- ============================================================
 
 local NEXUSCOPY_VERSION = "1.0.0"
-local REPO_BASE = "https://raw.githubusercontent.com/YOUR_USERNAME/NexusCopy/main/"
+local REPO_BASE = "https://raw.githubusercontent.com/andrecanadian90-cmyk/NexusCopy/main/"
 
 -- ============================================================
 -- Module Loader
