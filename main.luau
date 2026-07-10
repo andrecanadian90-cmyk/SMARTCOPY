@@ -125,71 +125,123 @@ return function(userOptions)
 			screenGui.ResetOnSpawn = false
 
 			local frame = Instance.new("Frame")
-			frame.Size = UDim2.new(0, 360, 0, 140)
-			frame.Position = UDim2.new(1, -380, 0, 20)
-			frame.BackgroundColor3 = Color3.fromRGB(12, 12, 22)
-			frame.BackgroundTransparency = 0.1
+			frame.Size = UDim2.new(0, 380, 0, 150)
+			frame.Position = UDim2.new(1, -400, 0, 20)
+			frame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+			frame.BackgroundTransparency = 0.15
 			frame.BorderSizePixel = 0
 			frame.Parent = screenGui
 
 			local corner = Instance.new("UICorner")
-			corner.CornerRadius = UDim.new(0, 12)
+			corner.CornerRadius = UDim.new(0, 10)
 			corner.Parent = frame
 
 			local stroke = Instance.new("UIStroke")
-			stroke.Color = Color3.fromRGB(100, 60, 255)
-			stroke.Thickness = 2
+			stroke.Color = Color3.fromRGB(45, 45, 48)
+			stroke.Thickness = 1.5
 			stroke.Parent = frame
 
+			-- Title
 			local title = Instance.new("TextLabel")
-			title.Size = UDim2.new(1, -20, 0, 25)
-			title.Position = UDim2.new(0, 10, 0, 8)
+			title.Size = UDim2.new(1, -120, 0, 25)
+			title.Position = UDim2.new(0, 15, 0, 12)
 			title.BackgroundTransparency = 1
-			title.Text = "⚡ SMARTCOPY v" .. SMARTCOPY_VERSION
-			title.TextColor3 = Color3.fromRGB(140, 100, 255)
-			title.TextSize = 16
+			title.Text = "SMARTCOPY by Ndrew"
+			title.TextColor3 = Color3.fromRGB(240, 240, 245)
+			title.TextSize = 14
 			title.Font = Enum.Font.GothamBold
 			title.TextXAlignment = Enum.TextXAlignment.Left
 			title.Parent = frame
 
+			-- Active AI Badge
+			local badge = Instance.new("Frame")
+			badge.Size = UDim2.new(0, 80, 0, 20)
+			badge.Position = UDim2.new(1, -95, 0, 14)
+			badge.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+			badge.Parent = frame
+			
+			local badgeCorner = Instance.new("UICorner")
+			badgeCorner.CornerRadius = UDim.new(0, 6)
+			badgeCorner.Parent = badge
+
+			local badgeStroke = Instance.new("UIStroke")
+			badgeStroke.Color = Color3.fromRGB(35, 35, 40)
+			badgeStroke.Thickness = 1
+			badgeStroke.Parent = badge
+
+			local badgeText = Instance.new("TextLabel")
+			badgeText.Size = UDim2.new(1, 0, 1, 0)
+			badgeText.BackgroundTransparency = 1
+			badgeText.Text = "● ACTIVE"
+			badgeText.TextColor3 = Color3.fromRGB(0, 180, 255)
+			badgeText.TextSize = 9
+			badgeText.Font = Enum.Font.GothamBold
+			badgeText.Parent = badge
+
+			-- Phase / Status label
 			local statusLabel = Instance.new("TextLabel")
 			statusLabel.Name = "Status"
-			statusLabel.Size = UDim2.new(1, -20, 0, 20)
-			statusLabel.Position = UDim2.new(0, 10, 0, 38)
+			statusLabel.Size = UDim2.new(1, -100, 0, 20)
+			statusLabel.Position = UDim2.new(0, 15, 0, 42)
 			statusLabel.BackgroundTransparency = 1
 			statusLabel.Text = "Initializing..."
-			statusLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-			statusLabel.TextSize = 13
-			statusLabel.Font = Enum.Font.Gotham
+			statusLabel.TextColor3 = Color3.fromRGB(180, 180, 185)
+			statusLabel.TextSize = 11
+			statusLabel.Font = Enum.Font.GothamMedium
 			statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 			statusLabel.Parent = frame
 
+			-- Percentage Label
+			local percentLabel = Instance.new("TextLabel")
+			percentLabel.Name = "Percent"
+			percentLabel.Size = UDim2.new(0, 60, 0, 20)
+			percentLabel.Position = UDim2.new(1, -75, 0, 42)
+			percentLabel.BackgroundTransparency = 1
+			percentLabel.Text = "0%"
+			percentLabel.TextColor3 = Color3.fromRGB(0, 180, 255)
+			percentLabel.TextSize = 11
+			percentLabel.Font = Enum.Font.GothamBold
+			percentLabel.TextXAlignment = Enum.TextXAlignment.Right
+			percentLabel.Parent = frame
+
+			-- Progress Bar Background
 			local progressBg = Instance.new("Frame")
-			progressBg.Size = UDim2.new(1, -20, 0, 8)
-			progressBg.Position = UDim2.new(0, 10, 0, 65)
-			progressBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+			progressBg.Name = "ProgressBg"
+			progressBg.Size = UDim2.new(1, -30, 0, 6)
+			progressBg.Position = UDim2.new(0, 15, 0, 68)
+			progressBg.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
 			progressBg.BorderSizePixel = 0
 			progressBg.Parent = frame
-			Instance.new("UICorner", progressBg).CornerRadius = UDim.new(0, 4)
+			Instance.new("UICorner", progressBg).CornerRadius = UDim.new(0, 3)
 
+			-- Progress Bar Fill
 			local progressFill = Instance.new("Frame")
 			progressFill.Name = "Fill"
 			progressFill.Size = UDim2.new(0, 0, 1, 0)
-			progressFill.BackgroundColor3 = Color3.fromRGB(100, 60, 255)
+			progressFill.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
 			progressFill.BorderSizePixel = 0
 			progressFill.Parent = progressBg
-			Instance.new("UICorner", progressFill).CornerRadius = UDim.new(0, 4)
+			Instance.new("UICorner", progressFill).CornerRadius = UDim.new(0, 3)
 
+			local grad = Instance.new("UIGradient")
+			grad.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 150, 255)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 220, 255))
+			})
+			grad.Parent = progressFill
+
+			-- Detail
 			local detail = Instance.new("TextLabel")
 			detail.Name = "Detail"
-			detail.Size = UDim2.new(1, -20, 0, 40)
-			detail.Position = UDim2.new(0, 10, 0, 82)
+			detail.Size = UDim2.new(1, -30, 0, 50)
+			detail.Position = UDim2.new(0, 15, 0, 85)
 			detail.BackgroundTransparency = 1
-			detail.Text = ""
-			detail.TextColor3 = Color3.fromRGB(140, 140, 160)
-			detail.TextSize = 11
+			detail.Text = "Loading systems..."
+			detail.TextColor3 = Color3.fromRGB(130, 130, 135)
+			detail.TextSize = 10
 			detail.Font = Enum.Font.Gotham
 			detail.TextXAlignment = Enum.TextXAlignment.Left
+			detail.TextYAlignment = Enum.TextYAlignment.Top
 			detail.TextWrapped = true
 			detail.Parent = frame
 
@@ -206,7 +258,11 @@ return function(userOptions)
 		pcall(function()
 			local frame = statusGui:FindFirstChildWhichIsA("Frame")
 			if status then frame.Status.Text = status end
-			if progress then frame:FindFirstChild("Frame").Fill.Size = UDim2.new(math.clamp(progress, 0, 1), 0, 1, 0) end
+			if progress then 
+				local pct = math.clamp(math.floor(progress * 100), 0, 100)
+				frame.Percent.Text = tostring(pct) .. "%"
+				frame.ProgressBg.Fill.Size = UDim2.new(progress, 0, 1, 0) 
+			end
 			if detail then frame.Detail.Text = detail end
 		end)
 	end
