@@ -1,4 +1,4 @@
-﻿-- ============================================================
+-- ============================================================
 -- SMARTCOPY :: DecompileChecker v2
 -- Dynamically retries failed decompilations with increasing
 -- timeouts until ALL scripts are decompiled or no more
@@ -235,8 +235,5 @@ function DecompileChecker:Run()
 
 	print("============================================")
 end
-
--- Auto-run
-DecompileChecker:Run()
 
 return DecompileChecker

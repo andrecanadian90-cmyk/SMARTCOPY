@@ -1,4 +1,4 @@
-﻿-- ============================================================
+-- ============================================================
 -- SMARTCOPY :: WatermarkReplacer
 -- Replaces USSI/decompiler watermark comments with custom
 -- branding on ALL scripts in the game tree.
@@ -102,8 +102,5 @@ end
 function WatermarkReplacer:GetStats()
 	return stats
 end
-
--- Auto-run
-WatermarkReplacer:Run()
 
 return WatermarkReplacer

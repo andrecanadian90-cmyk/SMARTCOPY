@@ -161,7 +161,7 @@ local MODULES = {
 		name = "🔄 DecompileChecker",
 		desc = "Retry script yang gagal decompile (dynamic timeout)",
 		module = "DecompileChecker",
-		action = function(mod) end, -- auto-runs on load
+		action = function(mod) mod:Run() end,
 	},
 	{
 		name = "🕵️ ServerSpy",
@@ -231,13 +231,19 @@ local MODULES = {
 		name = "🏷️ WatermarkReplacer",
 		desc = "Replace watermark → 'copy by Ndrew'",
 		module = "WatermarkReplacer",
-		action = function(mod) end, -- auto-runs on load
+		action = function(mod)
+			mod:Run()
+			statusLabel.Text = "✅ Watermark replaced!"
+		end,
 	},
 	{
 		name = "🧹 WatermarkCleaner",
 		desc = "Hapus semua watermark USSI",
 		module = "WatermarkCleaner",
-		action = function(mod) end, -- auto-runs on load
+		action = function(mod)
+			mod:Run()
+			statusLabel.Text = "✅ Watermark cleaned!"
+		end,
 	},
 }
 

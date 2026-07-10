@@ -1,4 +1,4 @@
-﻿--!optimize 2
+--!optimize 2
 -- ============================================================
 -- SMARTCOPY :: UnionFixer
 -- Converts UnionOperations → MeshParts before USSI save
@@ -319,10 +319,5 @@ end
 function UnionFixer:GetStats()
 	return stats
 end
-
--- ============================================================
--- Auto-run when executed directly
--- ============================================================
-UnionFixer:Run({ workspace })
 
 return UnionFixer
