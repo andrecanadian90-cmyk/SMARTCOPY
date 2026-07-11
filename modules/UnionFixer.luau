@@ -180,59 +180,140 @@ local function convertSingle(union)
 	end
 
 	-- -- Step 3: Create replacement MeshPart --------------
-	local mesh = Instance.new("MeshPart")
-	mesh.Name = union.Name
-
-	-- Transform
-	mesh.CFrame = union.CFrame
-	mesh.Size = union.Size
-	
-	-- Copy PivotOffset (CRITICAL to prevent offset/displacement!)
-	pcall(function()
-		mesh.PivotOffset = union.PivotOffset
+	local mesh = nil
+	local createOk = pcall(function()
+		mesh = Instance.new("MeshPart")
 	end)
-
-	-- Appearance
-	for _, prop in ipairs(APPEARANCE_PROPS) do
-		safeCopy(union, mesh, prop)
+	
+	-- Fallback: If Instance.new("MeshPart") fails, search and clone an existing MeshPart in-game
+	if not createOk or not mesh then
+		pcall(function()
+			for _, desc in ipairs(game:GetDescendants()) do
+				if desc:IsA("MeshPart") then
+					local cloneOk, cloned = pcall(function() return desc:Clone() end)
+					if cloneOk and cloned then
+						-- Clean it up
+						for _, child in ipairs(cloned:GetChildren()) do
+							pcall(child.Destroy, child)
+						end
+						pcall(function() cloned.TextureID = "" end)
+						pcall(function() cloned.MeshId = "" end)
+						mesh = cloned
+						break
+					end
+				end
+			end
+		end)
 	end
 
-	-- Physics
-	for _, prop in ipairs(PHYSICS_PROPS) do
-		safeCopy(union, mesh, prop)
-	end
+	if mesh then
+		mesh.Name = union.Name
+		mesh.CFrame = union.CFrame
+		mesh.Size = union.Size
+		
+		-- Copy PivotOffset (CRITICAL to prevent offset/displacement!)
+		pcall(function()
+			mesh.PivotOffset = union.PivotOffset
+		end)
 
-	-- Optional properties
-	for _, prop in ipairs(OPTIONAL_PROPS) do
-		safeCopy(union, mesh, prop)
+		-- Appearance
+		for _, prop in ipairs(APPEARANCE_PROPS) do
+			safeCopy(union, mesh, prop)
+		end
+
+		-- Physics
+		for _, prop in ipairs(PHYSICS_PROPS) do
+			safeCopy(union, mesh, prop)
+		end
+
+		-- Optional properties
+		for _, prop in ipairs(OPTIONAL_PROPS) do
+			safeCopy(union, mesh, prop)
+		end
 	end
 
 	-- -- Step 4: Set mesh asset --------------------------
 	-- Try multiple approaches to set the mesh
 	local meshSet = false
 
-	-- Approach A: sethiddenproperty for MeshId
-	if not meshSet then
-		pcall(function()
-			sethiddenproperty(mesh, "MeshId", assetId)
-			meshSet = true
-		end)
+	if mesh then
+		-- Approach A: sethiddenproperty for MeshId
+		if not meshSet then
+			pcall(function()
+				sethiddenproperty(mesh, "MeshId", assetId)
+				meshSet = true
+			end)
+		end
+
+		-- Approach B: direct property (some executors allow this)
+		if not meshSet then
+			pcall(function()
+				mesh.MeshId = assetId
+				meshSet = true
+			end)
+		end
 	end
 
-	-- Approach B: direct property (some executors allow this)
 	if not meshSet then
+		-- Fallback Plan: Convert to Part + SpecialMesh
+		-- Bypasses runtime MeshPart constraints on restricted executors
+		local part = Instance.new("Part")
+		part.Name = union.Name
+		part.CFrame = union.CFrame
+		part.Size = union.Size
+		
+		-- Copy PivotOffset
 		pcall(function()
-			mesh.MeshId = assetId
-			meshSet = true
+			part.PivotOffset = union.PivotOffset
 		end)
-	end
 
-	if not meshSet then
-		-- Can't set mesh ? abort conversion, keep original Union
-		mesh:Destroy()
-		union:SetAttribute("_SMARTCOPY_NeedsReview", true)
-		union:SetAttribute("_SMARTCOPY_Reason", "Failed to set MeshId on MeshPart")
-		stats.keptAsUnion += 1
+		-- Appearance
+		for _, prop in ipairs(APPEARANCE_PROPS) do
+			safeCopy(union, part, prop)
+		end
+
+		-- Physics
+		for _, prop in ipairs(PHYSICS_PROPS) do
+			safeCopy(union, part, prop)
+		end
+
+		-- Optional properties
+		for _, prop in ipairs(OPTIONAL_PROPS) do
+			safeCopy(union, part, prop)
+		end
+		
+		-- Create SpecialMesh
+		local sm = Instance.new("SpecialMesh")
+		sm.MeshType = Enum.MeshType.FileMesh
+		sm.MeshId = assetId
+		sm.UsePartColor = true -- Allows Glow/Neon and custom coloring!
+		sm.Scale = Vector3.new(1, 1, 1)
+		sm.Parent = part
+		
+		-- Copy textures/decals if any
+		pcall(function()
+			local unionTexture = gethiddenproperty(union, "TextureID") or union.TextureID
+			if unionTexture and unionTexture ~= "" then
+				sm.TextureId = unionTexture
+			end
+		end)
+
+		-- Copy children, attributes, tags
+		copyChildren(union, part)
+		copyAttributes(union, part)
+		copyTags(union, part)
+		
+		-- Replace in hierarchy
+		local parent = union.Parent
+		part.Parent = parent
+		retargetConstraints(union, part)
+		
+		if mesh then
+			pcall(mesh.Destroy, mesh)
+		end
+		union:Destroy()
+		
+		stats.converted += 1
 		return true
 	end
 
