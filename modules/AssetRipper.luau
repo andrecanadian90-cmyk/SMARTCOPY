@@ -517,7 +517,7 @@ end
 
 function AssetRipper:DownloadAllLocal(folderName, onProgress)
 	local list = self:GetDownloadList()
-	local http_request = request or http.request or (syn and syn.request)
+	local http_request = request or http_request or (http and http.request) or (syn and syn.request)
 	if not http_request then
 		warn("[AssetRipper] No request function available to download assets locally!")
 		return false
