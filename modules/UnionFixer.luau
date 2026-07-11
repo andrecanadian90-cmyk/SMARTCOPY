@@ -147,63 +147,85 @@ local function convertSingle(union)
 		return true
 	end
 
-	-- -- Step 3: Create replacement Part + SpecialMesh ------
-	-- Part acts as the outer container (matching physics, size, and CFrame)
-	local part = Instance.new("Part")
-	part.Name = union.Name
+	-- -- Step 3: Create replacement MeshPart --------------
+	local mesh = Instance.new("MeshPart")
+	mesh.Name = union.Name
 
 	-- Transform
-	part.CFrame = union.CFrame
-	part.Size = union.Size
-	part.Shape = Enum.PartType.Block
+	mesh.CFrame = union.CFrame
+	mesh.Size = union.Size
+	
+	-- Copy PivotOffset (CRITICAL to prevent offset/displacement!)
+	pcall(function()
+		mesh.PivotOffset = union.PivotOffset
+	end)
 
 	-- Appearance
 	for _, prop in ipairs(APPEARANCE_PROPS) do
-		safeCopy(union, part, prop)
+		safeCopy(union, mesh, prop)
 	end
 
 	-- Physics
 	for _, prop in ipairs(PHYSICS_PROPS) do
-		safeCopy(union, part, prop)
+		safeCopy(union, mesh, prop)
 	end
 
 	-- Optional properties
 	for _, prop in ipairs(OPTIONAL_PROPS) do
-		safeCopy(union, part, prop)
+		safeCopy(union, mesh, prop)
 	end
 
-	-- Create SpecialMesh inside the Part
-	local mesh = Instance.new("SpecialMesh")
-	mesh.Name = "Mesh"
-	mesh.MeshType = Enum.MeshType.FileMesh
-	mesh.MeshId = tostring(assetId)
-	
-	-- Calculate proper scale factor based on InitialSize if available
-	local scale = Vector3.new(1, 1, 1)
-	if initialSize and initialSize.X > 0 and initialSize.Y > 0 and initialSize.Z > 0 then
-		local szX = union.Size.X / initialSize.X
-		local szY = union.Size.Y / initialSize.Y
-		local szZ = union.Size.Z / initialSize.Z
-		scale = Vector3.new(szX, szY, szZ)
+	-- -- Step 4: Set mesh asset --------------------------
+	-- Try multiple approaches to set the mesh
+	local meshSet = false
+
+	-- Approach A: sethiddenproperty for MeshId
+	if not meshSet then
+		pcall(function()
+			sethiddenproperty(mesh, "MeshId", tostring(assetId))
+			meshSet = true
+		end)
 	end
-	mesh.Scale = scale
-	mesh.Parent = part
+
+	-- Approach B: direct property (some executors allow this)
+	if not meshSet then
+		pcall(function()
+			mesh.MeshId = tostring(assetId)
+			meshSet = true
+		end)
+	end
+
+	if not meshSet then
+		-- Can't set mesh ? abort conversion, keep original Union
+		mesh:Destroy()
+		union:SetAttribute("_SMARTCOPY_NeedsReview", true)
+		union:SetAttribute("_SMARTCOPY_Reason", "Failed to set MeshId on MeshPart")
+		stats.keptAsUnion += 1
+		return true
+	end
+
+	-- -- Step 5: Set InitialSize for correct scaling ------
+	if initialSize then
+		pcall(function()
+			sethiddenproperty(mesh, "InitialSize", initialSize)
+		end)
+	end
 
 	-- -- Step 6: Copy children, attributes, tags ----------
-	copyChildren(union, part)
-	copyAttributes(union, part)
-	copyTags(union, part)
+	copyChildren(union, mesh)
+	copyAttributes(union, mesh)
+	copyTags(union, mesh)
 
 	-- Mark as converted for debugging
-	part:SetAttribute("_SMARTCOPY_ConvertedFrom", "UnionOperation")
-	part:SetAttribute("_SMARTCOPY_OriginalAssetId", tostring(assetId))
+	mesh:SetAttribute("_SMARTCOPY_ConvertedFrom", "UnionOperation")
+	mesh:SetAttribute("_SMARTCOPY_OriginalAssetId", tostring(assetId))
 
 	-- -- Step 7: Replace in hierarchy --------------------
 	local parent = union.Parent
-	part.Parent = parent
+	mesh.Parent = parent
 
 	-- Retarget any constraints/welds
-	retargetConstraints(union, part)
+	retargetConstraints(union, mesh)
 
 	-- Destroy original
 	union:Destroy()
