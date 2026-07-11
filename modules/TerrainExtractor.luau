@@ -177,18 +177,44 @@ function TerrainExtractor:Extract(options)
 		waterChunks = 0, compressionRatio = 0,
 	}
 
-	-- Get terrain bounds
+	-- Calculate terrain bounds based on actual workspace parts to avoid scanning 1 billion empty grid cells
 	local minPos, maxPos
-	local ok = pcall(function()
-		local ext = terrain.MaxExtents
-		minPos = Vector3.new(ext.Min.X, ext.Min.Y, ext.Min.Z) * 4
-		maxPos = Vector3.new(ext.Max.X, ext.Max.Y, ext.Max.Z) * 4
+	local hasParts = false
+	local minX, minY, minZ = 0, 0, 0
+	local maxX, maxY, maxZ = 0, 0, 0
+
+	pcall(function()
+		for _, inst in ipairs(workspace:GetDescendants()) do
+			if inst:IsA("BasePart") and inst ~= terrain then
+				local pos = inst.Position
+				local sz = inst.Size
+				local pMin = pos - (sz / 2)
+				local pMax = pos + (sz / 2)
+				
+				if not hasParts then
+					minX, minY, minZ = pMin.X, pMin.Y, pMin.Z
+					maxX, maxY, maxZ = pMax.X, pMax.Y, pMax.Z
+					hasParts = true
+				else
+					minX = math.min(minX, pMin.X)
+					minY = math.min(minY, pMin.Y)
+					minZ = math.min(minZ, pMin.Z)
+					maxX = math.max(maxX, pMax.X)
+					maxY = math.max(maxY, pMax.Y)
+					maxZ = math.max(maxZ, pMax.Z)
+				end
+			end
+		end
 	end)
 
-	if not ok then
-		warn("[SMARTCOPY/Terrain] MaxExtents failed, using fallback")
-		minPos = Vector3.new(-2048, -512, -2048)
-		maxPos = Vector3.new(2048, 512, 2048)
+	if hasParts then
+		-- Expand bounds slightly (e.g. 200 studs in each direction) and align
+		minPos = Vector3.new(minX - 250, math.clamp(minY - 150, -500, 1000), minZ - 250)
+		maxPos = Vector3.new(maxX + 250, math.clamp(maxY + 150, -500, 1000), maxZ + 250)
+	else
+		-- Fallback to a small region
+		minPos = Vector3.new(-1024, -256, -1024)
+		maxPos = Vector3.new(1024, 256, 1024)
 	end
 
 	local size = maxPos - minPos
