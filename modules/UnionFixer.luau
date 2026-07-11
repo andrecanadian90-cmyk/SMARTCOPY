@@ -60,6 +60,25 @@ local function safeCopy(src, dst, propName)
 	end)
 end
 
+local function cleanId(id)
+	if not id then return nil end
+	local idStr = tostring(id)
+	
+	-- Detect mock values returned by bugged executor gethiddenproperty (such as game.PlaceId or blank)
+	local placeIdStr = tostring(game.PlaceId)
+	if string.find(idStr, placeIdStr) then
+		return nil
+	end
+	
+	-- Extract digits
+	local digits = string.match(idStr, "%d+")
+	if not digits or digits == "0" then
+		return nil
+	end
+	
+	return "rbxassetid://" .. digits
+end
+
 local function copyChildren(src, dst)
 	for _, child in ipairs(src:GetChildren()) do
 		-- Skip NegateOperations (they are part of the CSG tree, not visual children)
@@ -117,17 +136,30 @@ local function convertSingle(union)
 		return true
 	end
 
-	-- -- Step 1: Read hidden AssetId ----------------------
+	-- -- Step 1: Retrieve mesh Asset ID -------------------
 	local assetId = nil
-	local gotAsset = pcall(function()
-		assetId = gethiddenproperty(union, "AssetId")
-	end)
-
-	-- Also try "MeshData" as fallback (some executors expose this)
-	local meshData = nil
+	
+	-- Priority 1: MeshId (direct path to pre-computed render mesh)
 	pcall(function()
-		meshData = gethiddenproperty(union, "MeshData")
+		local mId = gethiddenproperty(union, "MeshId")
+		assetId = cleanId(mId)
 	end)
+	
+	-- Priority 2: AssetId (CSG asset)
+	if not assetId then
+		pcall(function()
+			local aId = gethiddenproperty(union, "AssetId")
+			assetId = cleanId(aId)
+		end)
+	end
+
+	-- Priority 3: MeshData (executor fallback)
+	if not assetId then
+		pcall(function()
+			local mData = gethiddenproperty(union, "MeshData")
+			assetId = cleanId(mData)
+		end)
+	end
 
 	-- Read InitialSize for proper mesh scaling
 	local initialSize = nil
@@ -136,13 +168,13 @@ local function convertSingle(union)
 	end)
 
 	-- -- Step 2: Determine if we can convert --------------
-	local hasValidAsset = assetId and tostring(assetId) ~= ""
+	local hasValidAsset = assetId ~= nil
 
 	if not hasValidAsset then
 		-- No AssetId available ? Union can't be reliably converted.
 		-- Mark for manual review but keep as-is so USSI still saves it.
 		union:SetAttribute("_SMARTCOPY_NeedsReview", true)
-		union:SetAttribute("_SMARTCOPY_Reason", "No AssetId - CSG data may be lost")
+		union:SetAttribute("_SMARTCOPY_Reason", "No valid render MeshId/AssetId found")
 		stats.keptAsUnion += 1
 		return true
 	end
@@ -182,7 +214,7 @@ local function convertSingle(union)
 	-- Approach A: sethiddenproperty for MeshId
 	if not meshSet then
 		pcall(function()
-			sethiddenproperty(mesh, "MeshId", tostring(assetId))
+			sethiddenproperty(mesh, "MeshId", assetId)
 			meshSet = true
 		end)
 	end
@@ -190,7 +222,7 @@ local function convertSingle(union)
 	-- Approach B: direct property (some executors allow this)
 	if not meshSet then
 		pcall(function()
-			mesh.MeshId = tostring(assetId)
+			mesh.MeshId = assetId
 			meshSet = true
 		end)
 	end
