@@ -398,11 +398,28 @@ return function(userOptions)
 	end
 
 	-- ========================================
-	-- Phase 5: Save Instance (USSI)
-	-- The core map save ? this kicks player if SafeMode = true
+	-- Watermark Replacer (Runs silently in background BEFORE save)
+	-- Modifies script sources in game tree first so USSI saves them branded
+	-- ========================================
+	if options.ReplaceWatermark then
+		print("[SMARTCOPY] Background Task: Replacing watermarks...")
+		updateUI(nil, nil, "Replacing script watermarks with custom branding...")
+
+		local ok, mod = pcall(loadModule, "WatermarkReplacer")
+		if ok and mod then
+			local stats = mod:Run()
+			print(string.format("[SMARTCOPY] WatermarkReplacer done: branded %d scripts", stats.replaced or 0))
+		else
+			print("[SMARTCOPY] WatermarkReplacer not available, skipping...")
+		end
+	end
+
+	-- ========================================
+	-- Phase: Save Instance (USSI)
+	-- The core map save - this kicks player if SafeMode = true
 	-- ========================================
 	local phaseNum = getNextPhaseNum()
-	updateUI(string.format("Phase %d/%d: Saving instance tree...", phaseNum, totalPhases), 0.7, "This is the main save ? player may be kicked for safety!")
+	updateUI(string.format("Phase %d/%d: Saving instance tree...", phaseNum, totalPhases), 0.7, "This is the main save - player may be kicked for safety!")
 	print("[SMARTCOPY] Phase: Running SaveInstance (USSI engine)...")
 
 	local synsaveinstance = loadUSSI()
@@ -435,22 +452,7 @@ return function(userOptions)
 		warn("[SMARTCOPY] CRITICAL: Could not load USSI engine!")
 	end
 
-	-- ========================================
-	-- Watermark Replacer (Runs silently in background)
-	-- Runs after save so it can modify saved script sources
-	-- ========================================
-	if options.ReplaceWatermark then
-		print("[SMARTCOPY] Background Task: Replacing watermarks...")
-		updateUI(nil, nil, "Replacing script watermarks with custom branding...")
 
-		local ok, mod = pcall(loadModule, "WatermarkReplacer")
-		if ok and mod then
-			local stats = mod:Run()
-			print(string.format("[SMARTCOPY] WatermarkReplacer done: branded %d scripts", stats.replaced or 0))
-		else
-			print("[SMARTCOPY] WatermarkReplacer not available, skipping...")
-		end
-	end
 
 	-- ========================================
 	-- Phase 7: Generate Server Stubs (if ServerSpy was used)
