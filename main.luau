@@ -110,8 +110,8 @@ return function(userOptions)
 		IsolateLocalPlayer = userOptions.IsolateLocalPlayer ~= false,
 		SaveBytecode = userOptions.SaveBytecode or false,
 		ShowStatus = userOptions.ShowStatus ~= false,
-		IgnoreSharedStrings = userOptions.IgnoreSharedStrings or false,
-		FilePath = userOptions.FilePath or (folderName .. "/place_" .. game.PlaceId .. "_" .. placeName .. ".rbxl"),
+		IgnoreSharedStrings = options.IgnoreSharedStrings or false,
+		FilePath = userOptions.FilePath or (folderName .. "/place_" .. game.PlaceId .. "_" .. placeName .. ".rbxlx"),
 
 		-- SMARTCOPY extensions
 		FixUnions = userOptions.FixUnions ~= false,             -- default true
@@ -122,6 +122,15 @@ return function(userOptions)
 		DownloadAssets = userOptions.DownloadAssets or false,     -- generate download script
 		ReplaceWatermark = userOptions.ReplaceWatermark ~= false,   -- default true
 	}
+
+	-- Clean up any old temporary folders left behind from previous runs/crashes
+	pcall(function()
+		for _, child in ipairs(game:GetChildren()) do
+			if child.Name == "Nil Instances" or child.Name == "LocalPlayer" or child.Name == "StudioData" or string.find(child.Name, "FilteredSelection") then
+				child:Destroy()
+			end
+		end
+	end)
 
 	-- Auto-detect if map actually has terrain cells, and force enable IncludeTerrain
 	pcall(function()
