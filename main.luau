@@ -13,15 +13,15 @@
 -- With custom options:
 --   loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/main.luau", true))()({
 --       mode = "full",
---       FixUnions = true,
---       IncludeTerrain = false,
---       IncludeAssets = true,
---       DownloadAssets = true,
---       ServerSpy = true,
---       ServerSpyDuration = 60,
---       Decompile = true,
+--       FixUnions = true,           -- Convert Union ke MeshPart agar visual bagus
+--       IncludeTerrain = false,     -- Set true jika map memakai terrain voxel
+--       IncludeAssets = true,       -- Scan asset IDs
+--       DownloadAssets = true,      -- Buat script batch download asset
+--       ServerSpy = true,           -- AKTIFKAN ini biar memantau remote dulu!
+--       ServerSpyDuration = 60,     -- Durasi monitoring (detik) sebelum save
+--       Decompile = true,           -- Decompile scripts
 --       NilInstances = true,
---       SafeMode = true,
+--       SafeMode = true,            -- Biarkan true (aman), player akan kick di akhir proses
 --   })
 -- ============================================================
 
