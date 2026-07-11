@@ -267,6 +267,41 @@ local function convertSingle(union)
 end
 
 -- ============================================================
+local debugged = false
+local function runDebugUnion(union)
+	if debugged then return end
+	debugged = true
+	
+	local lines = {}
+	table.insert(lines, "=== SMARTCOPY Union Debug Log ===")
+	table.insert(lines, "PlaceId: " .. tostring(game.PlaceId))
+	table.insert(lines, "Union Name: " .. tostring(union.Name))
+	table.insert(lines, "Full Path: " .. tostring(union:GetFullName()))
+	table.insert(lines, "")
+	
+	local props = {
+		"MeshId", "MeshID", "AssetId", "AssetID", "MeshData",
+		"PhysicsData", "ChildData", "FormFactor", "CollisionId", "CollisionID"
+	}
+	
+	table.insert(lines, "--- DIRECT INDEXING ---")
+	for _, prop in ipairs(props) do
+		local ok, val = pcall(function() return union[prop] end)
+		table.insert(lines, string.format("union.%-15s -> %s (Val: %s)", prop, ok and "OK" or "FAIL", tostring(val)))
+	end
+	table.insert(lines, "")
+	
+	table.insert(lines, "--- GETHIDDENPROPERTY ---")
+	for _, prop in ipairs(props) do
+		local ok, val = pcall(function() return gethiddenproperty(union, prop) end)
+		table.insert(lines, string.format("gethiddenproperty(union, '%s') -> %s (Val: %s)", prop, ok and "OK" or "FAIL", tostring(val)))
+	end
+	
+	local logContent = table.concat(lines, "\n")
+	print("[SMARTCOPY/UnionDebug]\n" .. logContent)
+	pcall(writefile, "SMARTCOPY_Union_Debug.txt", logContent)
+end
+
 -- Main scan & convert
 -- ============================================================
 
@@ -297,6 +332,9 @@ function UnionFixer:Run(roots)
 
 	-- Convert each
 	for i, union in ipairs(unions) do
+		-- Run debug logic once to see what properties exist on this executor
+		pcall(runDebugUnion, union)
+
 		-- Check if it still exists (might have been a child of an already-converted union)
 		if union.Parent == nil then
 			continue
