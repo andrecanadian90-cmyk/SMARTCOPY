@@ -282,8 +282,37 @@ return function(userOptions)
 
 			local protectgui = protectgui or (syn and syn.protect_gui)
 			if protectgui then pcall(protectgui, screenGui) end
+			
+			local parent = nil
 			local gethui = gethui or get_hidden_gui
-			screenGui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
+			if gethui then
+				pcall(function()
+					parent = gethui()
+				end)
+			end
+			
+			local parented = false
+			if parent then
+				local ok = pcall(function()
+					screenGui.Parent = parent
+					parented = true
+				end)
+			end
+			
+			if not parented then
+				pcall(function()
+					screenGui.Parent = game:GetService("CoreGui")
+					parented = true
+				end)
+			end
+			
+			if not parented then
+				pcall(function()
+					screenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+					parented = true
+				end)
+			end
+			
 			statusGui = screenGui
 		end)
 	end
