@@ -80,6 +80,22 @@ end
 return function(userOptions)
 	userOptions = userOptions or {}
 
+	-- Get Place Name dynamically
+	local MarketplaceService = game:GetService("MarketplaceService")
+	local placeName = "Unknown_Place"
+	pcall(function()
+		local info = MarketplaceService:GetProductInfo(game.PlaceId)
+		placeName = info.Name
+	end)
+
+	-- Sanitize placeName for folder path (remove illegal characters)
+	placeName = string.gsub(placeName, "[\\/:*?\"<>|]", "_")
+	placeName = string.gsub(placeName, "%s+", "_") -- replace spaces with underscores for neatness
+	local folderName = "SMARTCOPY_" .. game.PlaceId .. "_" .. placeName
+	
+	-- Create the dedicated folder
+	pcall(makefolder, folderName)
+
 	-- Default options
 	local options = {
 		-- Save Instance options (passed to USSI)
@@ -95,7 +111,7 @@ return function(userOptions)
 		SaveBytecode = userOptions.SaveBytecode or false,
 		ShowStatus = userOptions.ShowStatus ~= false,
 		IgnoreSharedStrings = userOptions.IgnoreSharedStrings or false,
-		FilePath = userOptions.FilePath or false,
+		FilePath = userOptions.FilePath or (folderName .. "/place_" .. game.PlaceId .. "_" .. placeName .. ".rbxl"),
 
 		-- SMARTCOPY extensions
 		FixUnions = userOptions.FixUnions ~= false,             -- default true
@@ -106,6 +122,13 @@ return function(userOptions)
 		DownloadAssets = userOptions.DownloadAssets or false,     -- generate download script
 		ReplaceWatermark = userOptions.ReplaceWatermark ~= false,   -- default true
 	}
+
+	-- Auto-detect if map actually has terrain cells, and force enable IncludeTerrain
+	pcall(function()
+		if workspace.Terrain:CountCells() > 0 then
+			options.IncludeTerrain = true
+		end
+	end)
 
 	local startTime = os.clock()
 
@@ -357,7 +380,7 @@ return function(userOptions)
 
 			local terrainScript = terrainExtractor:SerializeForReplay()
 			if terrainScript and #terrainScript > 100 then
-				local terrainPath = "SMARTCOPY_Terrain.luau"
+				local terrainPath = folderName .. "/SMARTCOPY_Terrain.luau"
 				pcall(writefile, terrainPath, terrainScript)
 				print("[SMARTCOPY] Terrain saved to: " .. terrainPath)
 				terrainData = terrainExtractor:GetStats()
@@ -389,12 +412,12 @@ return function(userOptions)
 
 			local manifest = assetRipper:ExportManifestJSON()
 			if manifest then
-				pcall(writefile, "SMARTCOPY_Assets.json", manifest)
+				pcall(writefile, folderName .. "/SMARTCOPY_Assets.json", manifest)
 			end
 
 			if options.DownloadAssets then
 				local dlScript = assetRipper:GenerateDownloadScript()
-				pcall(writefile, "SMARTCOPY_Download.ps1", dlScript)
+				pcall(writefile, folderName .. "/SMARTCOPY_Download.ps1", dlScript)
 			end
 		else
 			print("[SMARTCOPY] AssetRipper not available, skipping...")
@@ -467,7 +490,7 @@ return function(userOptions)
 		print("[SMARTCOPY] Phase: Generating server script stubs...")
 
 		local report = serverSpy:ExportReport()
-		pcall(writefile, "SMARTCOPY_ServerSpy_Report.txt", report)
+		pcall(writefile, folderName .. "/SMARTCOPY_ServerSpy_Report.txt", report)
 
 		local stubs = serverSpy:GenerateServerStubs()
 		if #stubs > 0 then
@@ -477,7 +500,7 @@ return function(userOptions)
 				table.insert(allStubs, stub.sourceCode)
 				table.insert(allStubs, "\n")
 			end
-			pcall(writefile, "SMARTCOPY_ServerStubs.lua", table.concat(allStubs, "\n"))
+			pcall(writefile, folderName .. "/SMARTCOPY_ServerStubs.lua", table.concat(allStubs, "\n"))
 		end
 	end
 
