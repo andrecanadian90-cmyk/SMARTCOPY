@@ -268,6 +268,8 @@ end
 
 -- ============================================================
 local debugged = false
+local folderPath = ""
+
 local function runDebugUnion(union)
 	if debugged then return end
 	debugged = true
@@ -299,14 +301,17 @@ local function runDebugUnion(union)
 	
 	local logContent = table.concat(lines, "\n")
 	print("[SMARTCOPY/UnionDebug]\n" .. logContent)
-	pcall(writefile, "SMARTCOPY_Union_Debug.txt", logContent)
+	
+	local logPath = (folderPath ~= "" and (folderPath .. "/") or "") .. "SMARTCOPY_Union_Debug.txt"
+	pcall(writefile, logPath, logContent)
 end
 
 -- Main scan & convert
 -- ============================================================
 
-function UnionFixer:Run(roots)
+function UnionFixer:Run(roots, path)
 	roots = roots or { workspace }
+	folderPath = path or ""
 
 	print("============================================")
 	print("[SMARTCOPY/UnionFixer] Starting...")

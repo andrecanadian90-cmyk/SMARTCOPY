@@ -391,7 +391,7 @@ return function(userOptions)
 
 		local ok, mod = pcall(loadModule, "UnionFixer")
 		if ok and mod then
-			local stats = mod:Run({workspace})
+			local stats = mod:Run({workspace}, folderName)
 			print(string.format("[SMARTCOPY] UnionFixer done: converted %d unions", stats.converted or 0))
 		else
 			print("[SMARTCOPY] UnionFixer module not available, skipping...")
