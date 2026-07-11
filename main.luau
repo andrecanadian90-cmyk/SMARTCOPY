@@ -434,6 +434,7 @@ return function(userOptions)
 	-- Phase 4: Asset Scanning
 	-- ========================================
 	local assetData
+	local assetRipper
 	if options.IncludeAssets then
 		local phaseNum = getNextPhaseNum()
 		updateUI(string.format("Phase %d/%d: Scanning assets...", phaseNum, totalPhases), 0.5, "Finding meshes, textures, audio...")
@@ -441,7 +442,7 @@ return function(userOptions)
 
 		local ok, mod = pcall(loadModule, "AssetRipper")
 		if ok and mod then
-			local assetRipper = mod
+			assetRipper = mod
 			assetRipper:Scan(nil, function(pct)
 				updateUI(nil, 0.5 + pct * 0.1,
 					string.format("Scanning assets: %.0f%%", pct * 100))
@@ -474,9 +475,15 @@ return function(userOptions)
 		updateUI(string.format("Phase %d/%d: Bypassing Asset Privacy...", phaseNum, totalPhases), 0.6, "Downloading assets locally & generating server...")
 		print("[SMARTCOPY] Phase: Bypassing Asset Privacy (Downloading + Redirecting)...")
 
-		local ok, mod = pcall(loadModule, "AssetRipper")
-		if ok and mod then
-			local assetRipper = mod
+		if not assetRipper then
+			local ok, mod = pcall(loadModule, "AssetRipper")
+			if ok and mod then
+				assetRipper = mod
+				assetRipper:Scan(nil)
+			end
+		end
+
+		if assetRipper then
 			
 			-- 1. Download all assets via game client authentication
 			assetRipper:DownloadAllLocal(folderName, function(pct, downloaded, failed, skipped)
