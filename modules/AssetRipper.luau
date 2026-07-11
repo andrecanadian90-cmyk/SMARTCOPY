@@ -515,6 +515,104 @@ function AssetRipper:ExportManifestJSON()
 	return ok and json or nil
 end
 
+function AssetRipper:DownloadAllLocal(folderName, onProgress)
+	local list = self:GetDownloadList()
+	local http_request = request or http.request or (syn and syn.request)
+	if not http_request then
+		warn("[AssetRipper] No request function available to download assets locally!")
+		return false
+	end
+
+	pcall(makefolder, folderName .. "/assets")
+	
+	local total = #list
+	local downloaded = 0
+	local failed = 0
+	local skipped = 0
+
+	for i, a in ipairs(list) do
+		-- Only download Meshes, Textures, Audio, Images (critical rendering types)
+		if a.type == "Mesh" or a.type == "Texture" or a.type == "Audio" or a.type == "Image" then
+			local typeDir = folderName .. "/assets/" .. a.type
+			pcall(makefolder, typeDir)
+			
+			local filePath = typeDir .. "/" .. tostring(a.id)
+			if isfile(filePath) then
+				skipped += 1
+			else
+				local url = "https://assetdelivery.roblox.com/v1/asset/?id=" .. tostring(a.id)
+				local ok, res = pcall(function()
+					return http_request({
+						Url = url,
+						Method = "GET"
+					})
+				end)
+
+				if ok and res and res.StatusCode == 200 and res.Body then
+					local writeOk = pcall(writefile, filePath, res.Body)
+					if writeOk then
+						downloaded += 1
+					else
+						failed += 1
+					end
+				else
+					failed += 1
+				end
+			end
+		end
+
+		if onProgress then
+			pcall(onProgress, i / total, downloaded, failed, skipped)
+		end
+		
+		-- Small yield to prevent thread freeze
+		if i % 10 == 0 then
+			task.wait()
+		end
+	end
+	
+	return true
+end
+
+function AssetRipper:GeneratePythonServer()
+	local L = {}
+	local function add(s) table.insert(L, s) end
+	add("# ========================================================")
+	add("# SMARTCOPY Local Asset Server (Python 3)")
+	add("# copy by Ndrew | https://bernadaclub.my.id")
+	add("# Bypass Roblox Asset Privacy (403 Forbidden)")
+	add("# ========================================================")
+	add("")
+	add("import http.server")
+	add("import socketserver")
+	add("import os")
+	add("")
+	add("PORT = 8000")
+	add("DIRECTORY = os.path.dirname(os.path.abspath(__file__))")
+	add("")
+	add("class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):")
+	add("    def translate_path(self, path):")
+	add("        path = path.split('?')[0]")
+	add("        return super().translate_path(path)")
+	add("    def end_headers(self):")
+	add("        self.send_header('Access-Control-Allow-Origin', '*')")
+	add("        super().end_headers()")
+	add("")
+	add("Handler = MyHttpRequestHandler")
+	add("")
+	add("with socketserver.TCPServer(('', PORT), Handler) as httpd:")
+	add("    print(f'\\n[SMARTCOPY] Local Asset Server active on port {PORT}')")
+	add("    print(f'[SMARTCOPY] Assets served from: {os.path.join(DIRECTORY, \"assets\")}')")
+	add("    print(f'[SMARTCOPY] Keep this window open and load your map in Studio!')")
+	add("    print('Press Ctrl+C to stop.')")
+	add("    try:")
+	add("        httpd.serve_forever()")
+	add("    except KeyboardInterrupt:")
+	add("        print('\\nStopping server...')")
+	
+	return table.concat(L, "\n")
+end
+
 function AssetRipper:CopyReport()
 	local report = self:ExportReport()
 	print(report)
@@ -533,5 +631,9 @@ function AssetRipper:CopyDownloadScript(format)
 	end)
 	print(string.format("[AssetRipper] %s download script copied to clipboard! [OK]", format or "PowerShell"))
 end
+
+-- Export public tables
+AssetRipper.SCAN_MAP = SCAN_MAP
+AssetRipper.PROP_TYPE = PROP_TYPE
 
 return AssetRipper

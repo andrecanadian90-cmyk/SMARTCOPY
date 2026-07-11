@@ -111,7 +111,7 @@ return function(userOptions)
 		SaveBytecode = userOptions.SaveBytecode or false,
 		ShowStatus = userOptions.ShowStatus ~= false,
 		IgnoreSharedStrings = userOptions.IgnoreSharedStrings or false,
-		FilePath = userOptions.FilePath or (folderName .. "/place_" .. game.PlaceId .. "_" .. placeName .. ".rbxlx"),
+		FilePath = userOptions.FilePath or (folderName .. "/place_" .. game.PlaceId .. "_" .. placeName),
 
 		-- SMARTCOPY extensions
 		FixUnions = userOptions.FixUnions ~= false,             -- default true
@@ -121,6 +121,7 @@ return function(userOptions)
 		ServerSpyDuration = userOptions.ServerSpyDuration or 60, -- seconds to monitor
 		DownloadAssets = userOptions.DownloadAssets or false,     -- generate download script
 		ReplaceWatermark = userOptions.ReplaceWatermark ~= false,   -- default true
+		BypassAssetPrivacy = userOptions.BypassAssetPrivacy or false, -- default false
 	}
 
 	-- Clean up any old temporary folders left behind from previous runs/crashes
@@ -337,6 +338,7 @@ return function(userOptions)
 	if options.FixUnions then table.insert(activePhases, "FixUnions") end
 	if options.IncludeTerrain then table.insert(activePhases, "IncludeTerrain") end
 	if options.IncludeAssets then table.insert(activePhases, "IncludeAssets") end
+	if options.BypassAssetPrivacy then table.insert(activePhases, "BypassAssetPrivacy") end
 	table.insert(activePhases, "SaveInstance") -- Always runs
 	if serverSpy or options.ServerSpy then table.insert(activePhases, "ServerStubs") end
 
@@ -463,6 +465,78 @@ return function(userOptions)
 	end
 
 	-- ========================================
+	-- Phase: Bypass Asset Privacy (if enabled)
+	-- Downloads all assets locally via authenticated client request and 
+	-- redirects game tree URLs to localhost:8000
+	-- ========================================
+	if options.BypassAssetPrivacy then
+		local phaseNum = getNextPhaseNum()
+		updateUI(string.format("Phase %d/%d: Bypassing Asset Privacy...", phaseNum, totalPhases), 0.6, "Downloading assets locally & generating server...")
+		print("[SMARTCOPY] Phase: Bypassing Asset Privacy (Downloading + Redirecting)...")
+
+		local ok, mod = pcall(loadModule, "AssetRipper")
+		if ok and mod then
+			local assetRipper = mod
+			
+			-- 1. Download all assets via game client authentication
+			assetRipper:DownloadAllLocal(folderName, function(pct, downloaded, failed, skipped)
+				updateUI(nil, 0.6 + pct * 0.08,
+					string.format("Local Download: %.0f%%\nOK: %d | Skip: %d | Fail: %d",
+						pct * 100, downloaded, skipped, failed))
+			end)
+			
+			-- 2. Generate Python local server
+			local pyServer = assetRipper:GeneratePythonServer()
+			pcall(writefile, folderName .. "/start_asset_server.py", pyServer)
+			print("[SMARTCOPY] Python Local Asset Server written to: " .. folderName .. "/start_asset_server.py")
+			
+			-- 3. Traverse and replace URLs in-game
+			updateUI(nil, 0.68, "Redirecting game tree assets to localhost:8000...")
+			local assetServerUrl = "http://localhost:8000/assets/"
+			local SCAN_MAP = assetRipper.SCAN_MAP
+			local PROP_TYPE = assetRipper.PROP_TYPE
+			
+			local function redirect(instance)
+				local props = SCAN_MAP[instance.ClassName]
+				if props then
+					for _, prop in ipairs(props) do
+						pcall(function()
+							local currentVal = instance[prop]
+							if currentVal and currentVal ~= "" then
+								-- Extract digits
+								local digits = string.match(tostring(currentVal), "%d+")
+								if digits and digits ~= "0" then
+									local propType = PROP_TYPE[prop] or "Texture"
+									instance[prop] = assetServerUrl .. propType .. "/" .. digits
+								end
+							end
+						end)
+					end
+				end
+			end
+
+			-- Redirect in Workspace
+			for _, desc in ipairs(workspace:GetDescendants()) do
+				redirect(desc)
+			end
+			
+			-- Redirect in ReplicatedStorage, StarterGui, StarterPlayer
+			for _, svcName in ipairs({"ReplicatedStorage", "StarterGui", "StarterPlayer"}) do
+				local svc = game:GetService(svcName)
+				if svc then
+					for _, desc in ipairs(svc:GetDescendants()) do
+						redirect(desc)
+					end
+				end
+			end
+			
+			print("[SMARTCOPY] Redirection complete! All assets now point to localhost:8000.")
+		else
+			print("[SMARTCOPY] AssetRipper not available for BypassAssetPrivacy, skipping...")
+		end
+	end
+
+	-- ========================================
 	-- Watermark Replacer (Runs silently in background BEFORE save)
 	-- Modifies script sources in game tree first so USSI saves them branded
 	-- ========================================
@@ -582,6 +656,9 @@ return function(userOptions)
 	end
 	if options.DownloadAssets then
 		print("|    ? SMARTCOPY_Download.ps1 ? Asset download script     |")
+	end
+	if options.BypassAssetPrivacy then
+		print("|    ? start_asset_server.py ? Local asset server python  |")
 	end
 	if serverSpy then
 		print("|    ? SMARTCOPY_ServerSpy_Report.txt ? Remote logs       |")
