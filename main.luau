@@ -110,7 +110,7 @@ return function(userOptions)
 		IsolateLocalPlayer = userOptions.IsolateLocalPlayer ~= false,
 		SaveBytecode = userOptions.SaveBytecode or false,
 		ShowStatus = userOptions.ShowStatus ~= false,
-		IgnoreSharedStrings = options.IgnoreSharedStrings or false,
+		IgnoreSharedStrings = userOptions.IgnoreSharedStrings or false,
 		FilePath = userOptions.FilePath or (folderName .. "/place_" .. game.PlaceId .. "_" .. placeName .. ".rbxlx"),
 
 		-- SMARTCOPY extensions
