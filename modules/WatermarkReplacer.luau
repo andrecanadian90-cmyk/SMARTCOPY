@@ -44,6 +44,7 @@ function WatermarkReplacer:Run(header, watermarks)
 
 	local headerStr = table.concat(headerLines, "\n")
 
+	local processed = 0
 	for _, inst in ipairs(game:GetDescendants()) do
 		if not inst:IsA("LuaSourceContainer") then continue end
 		local src = inst.Source
@@ -87,6 +88,11 @@ function WatermarkReplacer:Run(header, watermarks)
 
 		inst.Source = headerStr .. "\n\n" .. table.concat(bodyLines, "\n")
 		stats.replaced += 1
+
+		processed += 1
+		if processed % 50 == 0 then
+			task.wait() -- yield to prevent game freeze
+		end
 	end
 
 	print("============================================")

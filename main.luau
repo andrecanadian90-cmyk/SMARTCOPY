@@ -273,7 +273,6 @@ return function(userOptions)
 	if options.IncludeTerrain then table.insert(activePhases, "IncludeTerrain") end
 	if options.IncludeAssets then table.insert(activePhases, "IncludeAssets") end
 	table.insert(activePhases, "SaveInstance") -- Always runs
-	if options.ReplaceWatermark then table.insert(activePhases, "ReplaceWatermark") end
 	if serverSpy or options.ServerSpy then table.insert(activePhases, "ServerStubs") end
 
 	local totalPhases = #activePhases
@@ -437,13 +436,12 @@ return function(userOptions)
 	end
 
 	-- ========================================
-	-- Phase 6: Watermark Replacer (if enabled)
+	-- Watermark Replacer (Runs silently in background)
 	-- Runs after save so it can modify saved script sources
 	-- ========================================
 	if options.ReplaceWatermark then
-		local phaseNum = getNextPhaseNum()
-		updateUI(string.format("Phase %d/%d: Branding scripts...", phaseNum, totalPhases), 0.85, "Applying 'copy by Ndrew' watermark")
-		print("[SMARTCOPY] Phase: Replacing watermarks...")
+		print("[SMARTCOPY] Background Task: Replacing watermarks...")
+		updateUI(nil, nil, "Replacing script watermarks with custom branding...")
 
 		local ok, mod = pcall(loadModule, "WatermarkReplacer")
 		if ok and mod then
