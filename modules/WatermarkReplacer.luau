@@ -4,17 +4,17 @@
 -- branding on ALL scripts in the game tree.
 --
 -- USAGE:
---   Option A — Run in Roblox Studio Command Bar after loading .rbxl
---   Option B — Run in executor after USSI save but before closing
+--   Option A ? Run in Roblox Studio Command Bar after loading .rbxl
+--   Option B ? Run in executor after USSI save but before closing
 --
 -- To customize the replacement text, edit NEW_HEADER below.
 -- ============================================================
 
 local WatermarkReplacer = {}
 
--- ┌─────────────────────────────────────────────┐
--- │  CUSTOM HEADER — edit this to your liking   │
--- └─────────────────────────────────────────────┘
+-- ?--------------------------------------------??
+-- ?  CUSTOM HEADER ? edit this to your liking   ?
+-- ?--------------------------------------------??
 local NEW_HEADER = {
 	"-- copy by Ndrew |",
 	"-- https://bernadaclub.my.id",

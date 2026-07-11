@@ -1,8 +1,8 @@
 --!optimize 2
--- ╔══════════════════════════════════════════════════════════════╗
--- ║              SMARTCOPY by Ndrew — Executor Loader            ║
--- ║              https://bernadaclub.my.id                       ║
--- ╚══════════════════════════════════════════════════════════════╝
+-- +==============================================================?
+-- |              SMARTCOPY by Ndrew ? Executor Loader            |
+-- |              https://bernadaclub.my.id                       |
+-- +==============================================================?
 --
 -- CARA PAKAI:
 --   Copy-paste SELURUH script ini ke executor, lalu execute.
@@ -10,7 +10,7 @@
 --
 -- ATAU jalankan langsung per-module:
 --   loadstring(game:HttpGet("https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/loader.luau"))()
--- ════════════════════════════════════════════════════════════════
+-- ================================================================
 
 local REPO = "https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTCOPY/main/"
 
@@ -23,10 +23,10 @@ local function loadModule(name)
 		return loadstring(game:HttpGet(url, true), "SMARTCOPY/" .. name)()
 	end)
 	if ok and result then
-		print("[SMARTCOPY] ✅ Loaded: " .. name)
+		print("[SMARTCOPY] [OK] Loaded: " .. name)
 		return result
 	else
-		warn("[SMARTCOPY] ❌ Failed to load: " .. name .. " — " .. tostring(result))
+		warn("[SMARTCOPY] [FAIL] Failed to load: " .. name .. " ? " .. tostring(result))
 		return nil
 	end
 end
@@ -85,7 +85,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -20, 0, 35)
 title.Position = UDim2.new(0, 10, 0, 10)
 title.BackgroundTransparency = 1
-title.Text = "⚡ SMARTCOPY by Ndrew"
+title.Text = "[SMARTCOPY] SMARTCOPY by Ndrew"
 title.TextColor3 = Color3.fromRGB(100, 160, 255)
 title.TextSize = 18
 title.Font = Enum.Font.GothamBold
@@ -117,7 +117,7 @@ statusLabel.Name = "Status"
 statusLabel.Size = UDim2.new(1, -20, 0, 20)
 statusLabel.Position = UDim2.new(0, 10, 1, -30)
 statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Ready — pilih module untuk dijalankan"
+statusLabel.Text = "Ready ? pilih module untuk dijalankan"
 statusLabel.TextColor3 = Color3.fromRGB(80, 200, 120)
 statusLabel.TextSize = 11
 statusLabel.Font = Enum.Font.Gotham
@@ -130,13 +130,13 @@ statusLabel.Parent = frame
 
 local MODULES = {
 	{
-		name = "🔧 UnionFixer",
-		desc = "Convert Union → MeshPart (jalankan SEBELUM save)",
+		name = "[FIX] UnionFixer",
+		desc = "Convert Union ? MeshPart (jalankan SEBELUM save)",
 		module = "UnionFixer",
 		action = function(mod) mod:Run({workspace}) end,
 	},
 	{
-		name = "💾 SaveInstance (USSI)",
+		name = "[SAVE] SaveInstance (USSI)",
 		desc = "Save game ke .rbxl file",
 		module = nil, -- special case
 		action = function()
@@ -153,23 +153,23 @@ local MODULES = {
 			end)
 			if not ok then
 				warn("[SMARTCOPY] USSI Error: " .. tostring(err))
-				statusLabel.Text = "❌ USSI gagal: " .. tostring(err)
+				statusLabel.Text = "[FAIL] USSI gagal: " .. tostring(err)
 			end
 		end,
 	},
 	{
-		name = "🔄 DecompileChecker",
+		name = "[RETRY] DecompileChecker",
 		desc = "Retry script yang gagal decompile (dynamic timeout)",
 		module = "DecompileChecker",
 		action = function(mod) mod:Run() end,
 	},
 	{
-		name = "🕵️ ServerSpy",
-		desc = "Intercept semua Remote — START monitoring",
+		name = "[SPY] ServerSpy",
+		desc = "Intercept semua Remote ? START monitoring",
 		module = "ServerSpy",
 		action = function(mod)
 			mod:Start()
-			statusLabel.Text = "🕵️ ServerSpy ACTIVE — mainkan game!"
+			statusLabel.Text = "[SPY] ServerSpy ACTIVE ? mainkan game!"
 
 			-- Add stop button
 			task.delay(1, function()
@@ -181,7 +181,7 @@ local MODULES = {
 				stopBtn.Size = UDim2.new(1, -20, 0, 30)
 				stopBtn.Position = UDim2.new(0, 10, 1, -65)
 				stopBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-				stopBtn.Text = "⏹ STOP ServerSpy & Copy Report"
+				stopBtn.Text = "[STOP] STOP ServerSpy & Copy Report"
 				stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 				stopBtn.TextSize = 12
 				stopBtn.Font = Enum.Font.GothamBold
@@ -195,14 +195,14 @@ local MODULES = {
 				stopBtn.MouseButton1Click:Connect(function()
 					mod:Stop()
 					mod:CopyReport()
-					statusLabel.Text = "✅ Report copied to clipboard!"
+					statusLabel.Text = "[OK] Report copied to clipboard!"
 					stopBtn:Destroy()
 				end)
 			end)
 		end,
 	},
 	{
-		name = "🎨 AssetRipper",
+		name = "[ART] AssetRipper",
 		desc = "Scan & extract semua asset IDs",
 		module = "AssetRipper",
 		action = function(mod)
@@ -210,11 +210,11 @@ local MODULES = {
 				statusLabel.Text = string.format("Scanning... %.0f%%", pct * 100)
 			end)
 			mod:CopyReport()
-			statusLabel.Text = "✅ Asset report copied to clipboard!"
+			statusLabel.Text = "[OK] Asset report copied to clipboard!"
 		end,
 	},
 	{
-		name = "🏔️ TerrainExtractor",
+		name = "[TERRAIN] TerrainExtractor",
 		desc = "Extract terrain voxel data",
 		module = "TerrainExtractor",
 		action = function(mod)
@@ -224,25 +224,25 @@ local MODULES = {
 				end,
 			})
 			mod:CopyRestoreScript()
-			statusLabel.Text = "✅ Terrain restore script copied!"
+			statusLabel.Text = "[OK] Terrain restore script copied!"
 		end,
 	},
 	{
-		name = "🏷️ WatermarkReplacer",
-		desc = "Replace watermark → 'copy by Ndrew'",
+		name = "[TAG] WatermarkReplacer",
+		desc = "Replace watermark ? 'copy by Ndrew'",
 		module = "WatermarkReplacer",
 		action = function(mod)
 			mod:Run()
-			statusLabel.Text = "✅ Watermark replaced!"
+			statusLabel.Text = "[OK] Watermark replaced!"
 		end,
 	},
 	{
-		name = "🧹 WatermarkCleaner",
+		name = "[CLEAN] WatermarkCleaner",
 		desc = "Hapus semua watermark USSI",
 		module = "WatermarkCleaner",
 		action = function(mod)
 			mod:Run()
-			statusLabel.Text = "✅ Watermark cleaned!"
+			statusLabel.Text = "[OK] Watermark cleaned!"
 		end,
 	},
 }
@@ -302,7 +302,7 @@ for i, info in ipairs(MODULES) do
 
 	-- Click handler
 	btn.MouseButton1Click:Connect(function()
-		statusLabel.Text = "⏳ Loading " .. info.name .. "..."
+		statusLabel.Text = "? Loading " .. info.name .. "..."
 		statusLabel.TextColor3 = Color3.fromRGB(255, 200, 80)
 
 		task.defer(function()
@@ -312,7 +312,7 @@ for i, info in ipairs(MODULES) do
 					if mod then
 						info.action(mod)
 					else
-						statusLabel.Text = "❌ Gagal load " .. info.module
+						statusLabel.Text = "[FAIL] Gagal load " .. info.module
 						statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
 					end
 				else
@@ -322,7 +322,7 @@ for i, info in ipairs(MODULES) do
 
 			if not ok then
 				warn("[SMARTCOPY] Error: " .. tostring(err))
-				statusLabel.Text = "❌ Error: " .. string.sub(tostring(err), 1, 50)
+				statusLabel.Text = "[FAIL] Error: " .. string.sub(tostring(err), 1, 50)
 				statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
 			else
 				statusLabel.TextColor3 = Color3.fromRGB(80, 200, 120)
@@ -338,7 +338,7 @@ local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 24, 0, 24)
 closeBtn.Position = UDim2.new(1, -32, 0, 8)
 closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-closeBtn.Text = "✕"
+closeBtn.Text = "x"
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.TextSize = 14
 closeBtn.Font = Enum.Font.GothamBold
@@ -379,7 +379,7 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
 	end
 end)
 
-print("╔══════════════════════════════════════════╗")
-print("║     SMARTCOPY by Ndrew — LOADED! ⚡       ║")
-print("║     bernadaclub.my.id                    ║")
-print("╚══════════════════════════════════════════╝")
+print("+==========================================?")
+print("|     SMARTCOPY by Ndrew ? LOADED! [SMARTCOPY]       |")
+print("|     bernadaclub.my.id                    |")
+print("+==========================================?")

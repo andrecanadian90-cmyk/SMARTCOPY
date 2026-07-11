@@ -1,7 +1,7 @@
 --!native
 --!optimize 2
 -- ============================================================
--- SMARTCOPY v2.0 by Ndrew — Advanced Roblox Map Copier
+-- SMARTCOPY v2.0 by Ndrew ? Advanced Roblox Map Copier
 -- copy by Ndrew | https://bernadaclub.my.id
 --
 -- Full map extraction: terrain, meshes, textures, assets,
@@ -105,11 +105,11 @@ return function(userOptions)
 
 	local startTime = os.clock()
 
-	print("╔══════════════════════════════════════════════════════════╗")
-	print("║          ⚡ SMARTCOPY v" .. SMARTCOPY_VERSION .. " by Ndrew                ║")
-	print("║          https://bernadaclub.my.id                      ║")
-	print("║          Advanced Roblox Map Copier                     ║")
-	print("╚══════════════════════════════════════════════════════════╝")
+	print("+==========================================================?")
+	print("|          [SMARTCOPY] SMARTCOPY v" .. SMARTCOPY_VERSION .. " by Ndrew                |")
+	print("|          https://bernadaclub.my.id                      |")
+	print("|          Advanced Roblox Map Copier                     |")
+	print("+==========================================================?")
 	print("")
 
 	-- ========================================
@@ -171,7 +171,7 @@ return function(userOptions)
 			local badgeText = Instance.new("TextLabel")
 			badgeText.Size = UDim2.new(1, 0, 1, 0)
 			badgeText.BackgroundTransparency = 1
-			badgeText.Text = "● ACTIVE"
+			badgeText.Text = "* ACTIVE"
 			badgeText.TextColor3 = Color3.fromRGB(0, 180, 255)
 			badgeText.TextSize = 9
 			badgeText.Font = Enum.Font.GothamBold
@@ -298,11 +298,11 @@ return function(userOptions)
 			serverSpy = mod
 			serverSpy:Start()
 
-			print(string.format("[SMARTCOPY] ServerSpy active — monitoring for %ds...", options.ServerSpyDuration))
+			print(string.format("[SMARTCOPY] ServerSpy active ? monitoring for %ds...", options.ServerSpyDuration))
 			for i = 1, options.ServerSpyDuration do
 				task.wait(1)
 				updateUI(string.format("Phase %d/%d: Monitoring remotes...", phaseNum, totalPhases), (i / options.ServerSpyDuration) * 0.15,
-					string.format("Listening for %ds — play the game normally!\nCaptured: %d calls",
+					string.format("Listening for %ds ? play the game normally!\nCaptured: %d calls",
 						options.ServerSpyDuration - i, #serverSpy:GetLogs()))
 			end
 
@@ -346,7 +346,7 @@ return function(userOptions)
 			terrainExtractor:Extract({
 				onProgress = function(pct)
 					updateUI(nil, 0.35 + pct * 0.1,
-						string.format("Terrain: %.0f%% — %d chunks",
+						string.format("Terrain: %.0f%% ? %d chunks",
 							pct * 100, terrainExtractor:GetStats().nonEmptyChunks))
 				end,
 			})
@@ -399,10 +399,10 @@ return function(userOptions)
 
 	-- ========================================
 	-- Phase 5: Save Instance (USSI)
-	-- The core map save — this kicks player if SafeMode = true
+	-- The core map save ? this kicks player if SafeMode = true
 	-- ========================================
 	local phaseNum = getNextPhaseNum()
-	updateUI(string.format("Phase %d/%d: Saving instance tree...", phaseNum, totalPhases), 0.7, "This is the main save — player may be kicked for safety!")
+	updateUI(string.format("Phase %d/%d: Saving instance tree...", phaseNum, totalPhases), 0.7, "This is the main save ? player may be kicked for safety!")
 	print("[SMARTCOPY] Phase: Running SaveInstance (USSI engine)...")
 
 	local synsaveinstance = loadUSSI()
@@ -484,45 +484,45 @@ return function(userOptions)
 		or string.format("%dm %ds", math.floor(totalTime / 60), math.floor(totalTime % 60))
 
 	print("")
-	print("╔══════════════════════════════════════════════════════════╗")
-	print("║              ⚡ SMARTCOPY — COMPLETE                    ║")
-	print("╠══════════════════════════════════════════════════════════╣")
-	print(string.format("║  Time: %-47s  ║", timeStr))
+	print("+==========================================================?")
+	print("|              [SMARTCOPY] SMARTCOPY ? COMPLETE                    |")
+	print("+==========================================================+")
+	print(string.format("|  Time: %-47s  |", timeStr))
 
 	if terrainData then
-		print(string.format("║  Terrain: %d chunks (%d voxels)%-22s ║",
+		print(string.format("|  Terrain: %d chunks (%d voxels)%-22s |",
 			terrainData.nonEmptyChunks, terrainData.totalVoxels, ""))
 	end
 
 	if assetData then
-		print(string.format("║  Assets: %d total%-34s  ║", assetData._total or 0, ""))
+		print(string.format("|  Assets: %d total%-34s  |", assetData._total or 0, ""))
 	end
 
 	if serverSpy then
-		print(string.format("║  Remotes: %d captured, %d stubs generated%-15s ║",
+		print(string.format("|  Remotes: %d captured, %d stubs generated%-15s |",
 			#serverSpy:GetLogs(),
 			#serverSpy:GenerateServerStubs(), ""))
 	end
 
-	print("╠══════════════════════════════════════════════════════════╣")
-	print("║  Output files:                                          ║")
-	print("║    • [game].rbxlx — Full instance tree                  ║")
+	print("+==========================================================+")
+	print("|  Output files:                                          |")
+	print("|    ? [game].rbxlx ? Full instance tree                  |")
 	if terrainData then
-		print("║    • SMARTCOPY_Terrain.luau — Terrain restore script    ║")
+		print("|    ? SMARTCOPY_Terrain.luau ? Terrain restore script    |")
 	end
 	if assetData then
-		print("║    • SMARTCOPY_Assets.json — Asset manifest             ║")
+		print("|    ? SMARTCOPY_Assets.json ? Asset manifest             |")
 	end
 	if options.DownloadAssets then
-		print("║    • SMARTCOPY_Download.ps1 — Asset download script     ║")
+		print("|    ? SMARTCOPY_Download.ps1 ? Asset download script     |")
 	end
 	if serverSpy then
-		print("║    • SMARTCOPY_ServerSpy_Report.txt — Remote logs       ║")
-		print("║    • SMARTCOPY_ServerStubs.lua — Server script stubs    ║")
+		print("|    ? SMARTCOPY_ServerSpy_Report.txt ? Remote logs       |")
+		print("|    ? SMARTCOPY_ServerStubs.lua ? Server script stubs    |")
 	end
-	print("╚══════════════════════════════════════════════════════════╝")
+	print("+==========================================================?")
 
-	updateUI("✅ SMARTCOPY Complete!", 1, string.format("Done in %s • Check executor workspace folder", timeStr))
+	updateUI("[OK] SMARTCOPY Complete!", 1, string.format("Done in %s ? Check executor workspace folder", timeStr))
 
 	task.delay(30, function()
 		if statusGui then pcall(function() statusGui:Destroy() end) end

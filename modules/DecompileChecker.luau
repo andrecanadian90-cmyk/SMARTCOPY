@@ -123,19 +123,19 @@ function DecompileChecker:Run()
 		total, healthy, #failed, empty))
 
 	if #failed == 0 then
-		print("[DecompileChecker] All scripts are healthy! Nothing to do. ✅")
+		print("[DecompileChecker] All scripts are healthy! Nothing to do. [OK]")
 		return
 	end
 
 	local totalFixed = 0
 	local stillBroken = table.clone(failed)
 
-	-- ── Round loop with escalating timeouts ──────────────
+	-- -- Round loop with escalating timeouts --------------
 	for round, timeout in ipairs(TIMEOUT_ROUNDS) do
 		if #stillBroken == 0 then break end
 
 		print("")
-		print(string.format("── Round %d/%d | Timeout: %ds | Remaining: %d ──",
+		print(string.format("-- Round %d/%d | Timeout: %ds | Remaining: %d --",
 			round, #TIMEOUT_ROUNDS, timeout, #stillBroken))
 
 		local fixedThisRound = 0
@@ -151,7 +151,7 @@ function DecompileChecker:Run()
 				inst.Source = src
 				fixedThisRound += 1
 				totalFixed += 1
-				print(string.format("  ✅ [%d/%d] %s", i, #stillBroken, inst:GetFullName()))
+				print(string.format("  [OK] [%d/%d] %s", i, #stillBroken, inst:GetFullName()))
 			else
 				table.insert(nextRound, inst)
 			end
@@ -170,19 +170,19 @@ function DecompileChecker:Run()
 		-- If no progress was made this round, try next timeout
 		-- If we're on the last round and still no progress, we're done
 		if fixedThisRound == 0 and round >= #TIMEOUT_ROUNDS then
-			print("  No progress on final round — giving up on remaining scripts.")
+			print("  No progress on final round ? giving up on remaining scripts.")
 			break
 		end
 
 		if fixedThisRound == 0 then
-			print("  No progress — escalating timeout...")
+			print("  No progress ? escalating timeout...")
 		end
 	end
 
-	-- ── Extra aggressive pass for stubborn scripts ───────
+	-- -- Extra aggressive pass for stubborn scripts ------?
 	if #stillBroken > 0 then
 		print("")
-		print(string.format("── Final aggressive pass | Timeout: 300s | Remaining: %d ──", #stillBroken))
+		print(string.format("-- Final aggressive pass | Timeout: 300s | Remaining: %d --", #stillBroken))
 
 		local lastChance = {}
 		for i, inst in ipairs(stillBroken) do
@@ -193,7 +193,7 @@ function DecompileChecker:Run()
 			if success then
 				inst.Source = src
 				totalFixed += 1
-				print(string.format("  ✅ [%d/%d] %s", i, #stillBroken, inst:GetFullName()))
+				print(string.format("  [OK] [%d/%d] %s", i, #stillBroken, inst:GetFullName()))
 			else
 				table.insert(lastChance, inst)
 			end
@@ -204,16 +204,16 @@ function DecompileChecker:Run()
 		stillBroken = lastChance
 	end
 
-	-- ── Final Report ─────────────────────────────────────
+	-- -- Final Report ------------------------------------?
 	print("")
 	print("============================================")
 	print("[SMARTCOPY/DecompileChecker] COMPLETE!")
 	print("============================================")
 	print(string.format("  Total Scripts:       %d", total))
-	print(string.format("  Already Healthy:     %d ✅", healthy))
-	print(string.format("  Fixed by Retry:      %d ✅", totalFixed))
-	print(string.format("  Still Failed:        %d ❌", #stillBroken))
-	print(string.format("  Empty (no source):   %d ⬜", empty))
+	print(string.format("  Already Healthy:     %d [OK]", healthy))
+	print(string.format("  Fixed by Retry:      %d [OK]", totalFixed))
+	print(string.format("  Still Failed:        %d [FAIL]", #stillBroken))
+	print(string.format("  Empty (no source):   %d [ ]", empty))
 
 	local successRate = math.floor(((healthy + totalFixed) / math.max(total - empty, 1)) * 100)
 	print(string.format("  Success Rate:        %d%%", successRate))
@@ -221,7 +221,7 @@ function DecompileChecker:Run()
 
 	if #stillBroken > 0 then
 		print("")
-		print("── Scripts that could NOT be decompiled ────")
+		print("-- Scripts that could NOT be decompiled ----")
 		for i, inst in ipairs(stillBroken) do
 			print(string.format("  %d. %s [%s]", i, inst:GetFullName(), inst.ClassName))
 		end
@@ -230,7 +230,7 @@ function DecompileChecker:Run()
 		print("  and need a dedicated de-obfuscator or manual rewrite.")
 	else
 		print("")
-		print("  🎉 ALL scripts decompiled successfully!")
+		print("  ? ALL scripts decompiled successfully!")
 	end
 
 	print("============================================")

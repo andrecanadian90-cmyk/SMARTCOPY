@@ -1,7 +1,7 @@
 --!optimize 2
 -- ============================================================
 -- SMARTCOPY :: UnionFixer
--- Converts UnionOperations → MeshParts before USSI save
+-- Converts UnionOperations -> MeshParts before USSI save
 -- so the visual mesh is preserved as a proper asset reference.
 --
 -- HOW IT WORKS:
@@ -107,7 +107,7 @@ local function retargetConstraints(oldPart, newPart)
 end
 
 -- ============================================================
--- Core conversion: Union → MeshPart
+-- Core conversion: Union -> MeshPart
 -- ============================================================
 
 local function convertSingle(union)
@@ -117,7 +117,7 @@ local function convertSingle(union)
 		return true
 	end
 
-	-- ── Step 1: Read hidden AssetId ──────────────────────
+	-- -- Step 1: Read hidden AssetId ----------------------
 	local assetId = nil
 	local gotAsset = pcall(function()
 		assetId = gethiddenproperty(union, "AssetId")
@@ -135,11 +135,11 @@ local function convertSingle(union)
 		initialSize = gethiddenproperty(union, "InitialSize")
 	end)
 
-	-- ── Step 2: Determine if we can convert ──────────────
+	-- -- Step 2: Determine if we can convert --------------
 	local hasValidAsset = assetId and tostring(assetId) ~= ""
 
 	if not hasValidAsset then
-		-- No AssetId available — Union can't be reliably converted.
+		-- No AssetId available ? Union can't be reliably converted.
 		-- Mark for manual review but keep as-is so USSI still saves it.
 		union:SetAttribute("_SMARTCOPY_NeedsReview", true)
 		union:SetAttribute("_SMARTCOPY_Reason", "No AssetId - CSG data may be lost")
@@ -147,7 +147,7 @@ local function convertSingle(union)
 		return true
 	end
 
-	-- ── Step 3: Create replacement MeshPart ──────────────
+	-- -- Step 3: Create replacement MeshPart --------------
 	local mesh = Instance.new("MeshPart")
 	mesh.Name = union.Name
 
@@ -160,7 +160,7 @@ local function convertSingle(union)
 		safeCopy(union, mesh, prop)
 	end
 
-	-- UsePartColor → if the Union was set to use per-part color, 
+	-- UsePartColor -> if the Union was set to use per-part color, 
 	-- the MeshPart should inherit the Union's color
 	pcall(function()
 		if union.UsePartColor then
@@ -178,7 +178,7 @@ local function convertSingle(union)
 		safeCopy(union, mesh, prop)
 	end
 
-	-- ── Step 4: Set mesh asset ───────────────────────────
+	-- -- Step 4: Set mesh asset --------------------------?
 	-- Try multiple approaches to set the mesh
 	local meshSet = false
 
@@ -199,7 +199,7 @@ local function convertSingle(union)
 	end
 
 	if not meshSet then
-		-- Can't set mesh — abort conversion, keep original Union
+		-- Can't set mesh ? abort conversion, keep original Union
 		mesh:Destroy()
 		union:SetAttribute("_SMARTCOPY_NeedsReview", true)
 		union:SetAttribute("_SMARTCOPY_Reason", "Failed to set MeshId on MeshPart")
@@ -207,14 +207,14 @@ local function convertSingle(union)
 		return true
 	end
 
-	-- ── Step 5: Set InitialSize for correct scaling ──────
+	-- -- Step 5: Set InitialSize for correct scaling ------
 	if initialSize then
 		pcall(function()
 			sethiddenproperty(mesh, "InitialSize", initialSize)
 		end)
 	end
 
-	-- ── Step 6: Copy children, attributes, tags ──────────
+	-- -- Step 6: Copy children, attributes, tags ----------
 	copyChildren(union, mesh)
 	copyAttributes(union, mesh)
 	copyTags(union, mesh)
@@ -223,7 +223,7 @@ local function convertSingle(union)
 	mesh:SetAttribute("_SMARTCOPY_ConvertedFrom", "UnionOperation")
 	mesh:SetAttribute("_SMARTCOPY_OriginalAssetId", tostring(assetId))
 
-	-- ── Step 7: Replace in hierarchy ─────────────────────
+	-- -- Step 7: Replace in hierarchy --------------------?
 	local parent = union.Parent
 	mesh.Parent = parent
 
@@ -287,7 +287,7 @@ function UnionFixer:Run(roots)
 		if i % 30 == 0 then
 			local pct = math.floor(i / #unions * 100)
 			print(string.format(
-				"[SMARTCOPY/UnionFixer] Progress: %d/%d (%d%%) — converted: %d, kept: %d, errors: %d",
+				"[SMARTCOPY/UnionFixer] Progress: %d/%d (%d%%) ? converted: %d, kept: %d, errors: %d",
 				i, #unions, pct, stats.converted, stats.keptAsUnion, stats.errors
 			))
 			task.wait()
@@ -298,7 +298,7 @@ function UnionFixer:Run(roots)
 	print("============================================")
 	print("[SMARTCOPY/UnionFixer] COMPLETE!")
 	print(string.format("  Total Found:       %d", stats.totalFound))
-	print(string.format("  Converted → Mesh:  %d", stats.converted))
+	print(string.format("  Converted -> Mesh:  %d", stats.converted))
 	print(string.format("  Kept as Union:     %d (marked for review)", stats.keptAsUnion))
 	print(string.format("  Skipped Negates:   %d", stats.skippedNegate))
 	print(string.format("  Errors:            %d", stats.errors))
@@ -306,7 +306,7 @@ function UnionFixer:Run(roots)
 
 	if stats.keptAsUnion > 0 then
 		print("[SMARTCOPY/UnionFixer] TIP: Unions marked '_SMARTCOPY_NeedsReview' had no")
-		print("  AssetId — they may appear broken after save. Consider recreating them")
+		print("  AssetId ? they may appear broken after save. Consider recreating them")
 		print("  manually in Studio using regular Parts + Union tool.")
 	end
 

@@ -1,31 +1,31 @@
-﻿--!optimize 2
+--!optimize 2
 -- ============================================================
 -- SMARTCOPY :: AssetRipper v2 (MAX LEVEL)
 -- copy by Ndrew | https://bernadaclub.my.id
 --
 -- Comprehensive asset scanner that extracts ALL asset IDs from
--- any Roblox game — meshes, textures, sounds, animations,
+-- any Roblox game ? meshes, textures, sounds, animations,
 -- videos, clothing, skybox, particles, UI images, and more.
 --
 -- Features:
---   ✅ 30+ property types scanned
---   ✅ ContentId property auto-detection on ANY instance
---   ✅ Hidden property scan (via gethiddenproperty)
---   ✅ Duplicate detection & usage tracking
---   ✅ Categorized manifest with stats
---   ✅ PowerShell AND Python download scripts
---   ✅ Clipboard export (report, manifest, download script)
---   ✅ JSON manifest export
---   ✅ Asset size estimation
---   ✅ Progress callback + auto status prints
---   ✅ Branding: copy by Ndrew
+--   [OK] 30+ property types scanned
+--   [OK] ContentId property auto-detection on ANY instance
+--   [OK] Hidden property scan (via gethiddenproperty)
+--   [OK] Duplicate detection & usage tracking
+--   [OK] Categorized manifest with stats
+--   [OK] PowerShell AND Python download scripts
+--   [OK] Clipboard export (report, manifest, download script)
+--   [OK] JSON manifest export
+--   [OK] Asset size estimation
+--   [OK] Progress callback + auto status prints
+--   [OK] Branding: copy by Ndrew
 -- ============================================================
 
 local AssetRipper = {}
 local HttpService = game:GetService("HttpService")
 
 -- ============================================================
--- PROPERTY SCAN MAP (expanded v2 — 30+ class types)
+-- PROPERTY SCAN MAP (expanded v2 ? 30+ class types)
 -- ============================================================
 
 local SCAN_MAP = {
@@ -124,7 +124,7 @@ local GENERIC_PROPS = {"Image", "Texture", "SoundId", "MeshId", "AnimationId", "
 -- STATE
 -- ============================================================
 
-local assets = {}       -- id → { id, type, url, usedBy = {path=true}, firstSeen }
+local assets = {}       -- id -> { id, type, url, usedBy = {path=true}, firstSeen }
 local assetOrder = {}   -- insertion-order list of IDs
 local scanTime = 0
 local totalScanned = 0
@@ -345,11 +345,11 @@ function AssetRipper:_genPowerShell(list)
 	local L = {}
 	local function add(s) table.insert(L, s) end
 
-	add("# ════════════════════════════════════════════════════════")
+	add("# ========================================================")
 	add("# SMARTCOPY Asset Downloader (PowerShell)")
 	add("# copy by Ndrew | https://bernadaclub.my.id")
 	add("# Total assets: " .. #list)
-	add("# ════════════════════════════════════════════════════════")
+	add("# ========================================================")
 	add("")
 	add('$outputDir = ".\\SMARTCOPY_Assets"')
 	add("")
@@ -401,11 +401,11 @@ function AssetRipper:_genPython(list)
 	local L = {}
 	local function add(s) table.insert(L, s) end
 
-	add("# ════════════════════════════════════════════════════════")
+	add("# ========================================================")
 	add("# SMARTCOPY Asset Downloader (Python)")
 	add("# copy by Ndrew | https://bernadaclub.my.id")
 	add("# Total assets: " .. #list)
-	add("# ════════════════════════════════════════════════════════")
+	add("# ========================================================")
 	add("")
 	add("import os, requests, sys")
 	add("from concurrent.futures import ThreadPoolExecutor, as_completed")
@@ -443,13 +443,13 @@ function AssetRipper:_genPython(list)
 	add("            status, aid, info = future.result()")
 	add('            if status == "ok":')
 	add("                ok += 1")
-	add('                print(f"  [{i}/{len(ASSETS)}] ✅ {info}/{aid}")')
+	add('                print(f"  [{i}/{len(ASSETS)}] [OK] {info}/{aid}")')
 	add('            elif status == "skip":')
 	add("                skip += 1")
 	add('            else:')
 	add("                fail += 1")
-	add('                print(f"  [{i}/{len(ASSETS)}] ❌ {info}")')
-	add('    print(f"\\nDone! ✅ {ok} downloaded, ⏭ {skip} skipped, ❌ {fail} failed")')
+	add('                print(f"  [{i}/{len(ASSETS)}] [FAIL] {info}")')
+	add('    print(f"\\nDone! [OK] {ok} downloaded, ? {skip} skipped, [FAIL] {fail} failed")')
 
 	return table.concat(L, "\n")
 end
@@ -465,10 +465,10 @@ function AssetRipper:ExportReport()
 	local L = {}
 	local function add(s) table.insert(L, s) end
 
-	add("╔══════════════════════════════════════════════════════════╗")
-	add("║        SMARTCOPY — AssetRipper v2 REPORT                ║")
-	add("║        copy by Ndrew | https://bernadaclub.my.id        ║")
-	add("╚══════════════════════════════════════════════════════════╝")
+	add("+==========================================================?")
+	add("|        SMARTCOPY ? AssetRipper v2 REPORT                |")
+	add("|        copy by Ndrew | https://bernadaclub.my.id        |")
+	add("+==========================================================?")
 	add("")
 	add(string.format("Instances scanned:    %d", stats._instancesScanned or 0))
 	add(string.format("Unique assets found:  %d", stats._total or 0))
@@ -476,7 +476,7 @@ function AssetRipper:ExportReport()
 	add(string.format("Scan time:            %.1fs", stats._scanTime or 0))
 	add("")
 
-	add("═══ BY CATEGORY ═══")
+	add("=== BY CATEGORY ===")
 	add("")
 	for cat, count in pairs(stats) do
 		if string.sub(cat, 1, 1) ~= "_" then
@@ -485,18 +485,18 @@ function AssetRipper:ExportReport()
 	end
 	add("")
 
-	add("═══ FULL ASSET LIST ═══")
+	add("=== FULL ASSET LIST ===")
 	add("")
 	local currentType = ""
 	for _, a in ipairs(list) do
 		if a.type ~= currentType then
 			currentType = a.type
-			add(string.format("── %s ──", currentType))
+			add(string.format("-- %s --", currentType))
 		end
 		local usedStr = #a.usedBy <= 3
 			and table.concat(a.usedBy, ", ")
 			or (table.concat({a.usedBy[1], a.usedBy[2]}, ", ") .. string.format(" +%d more", #a.usedBy - 2))
-		add(string.format("  %d (×%d) → %s", a.id, a.useCount, usedStr))
+		add(string.format("  %d (?%d) -> %s", a.id, a.useCount, usedStr))
 	end
 
 	return table.concat(L, "\n")
@@ -522,7 +522,7 @@ function AssetRipper:CopyReport()
 		if setclipboard then setclipboard(report)
 		elseif toclipboard then toclipboard(report) end
 	end)
-	print("[AssetRipper] Report copied to clipboard! ✅")
+	print("[AssetRipper] Report copied to clipboard! [OK]")
 end
 
 function AssetRipper:CopyDownloadScript(format)
@@ -531,7 +531,7 @@ function AssetRipper:CopyDownloadScript(format)
 		if setclipboard then setclipboard(script)
 		elseif toclipboard then toclipboard(script) end
 	end)
-	print(string.format("[AssetRipper] %s download script copied to clipboard! ✅", format or "PowerShell"))
+	print(string.format("[AssetRipper] %s download script copied to clipboard! [OK]", format or "PowerShell"))
 end
 
 return AssetRipper

@@ -1,24 +1,24 @@
-﻿--!optimize 2
+--!optimize 2
 -- ============================================================
 -- SMARTCOPY :: ServerSpy v2 (MAX LEVEL)
 -- Complete remote interception, analysis, and server script
 -- reconstruction engine.
 --
 -- Features:
---   ✅ Hook ALL remotes (Event, Function, Unreliable)
---   ✅ __namecall metamethod hook (catches obfuscated calls)
---   ✅ ByteNet packet-aware logging
---   ✅ Return value capture on RemoteFunctions
---   ✅ Call stack capture (which script called the remote)
---   ✅ Frequency analysis (detect heartbeats vs actions)
---   ✅ Smart remote categorization
---   ✅ Server-spawned instance tracking + correlation
---   ✅ Property & Attribute change monitoring
---   ✅ Deep serialization (depth 6, buffer support)
---   ✅ Complete server script generation (runnable)
---   ✅ Real-time logging toggle
---   ✅ Export report to clipboard
---   ✅ Auto timing correlation (remote call ↔ instance spawn)
+--   [OK] Hook ALL remotes (Event, Function, Unreliable)
+--   [OK] __namecall metamethod hook (catches obfuscated calls)
+--   [OK] ByteNet packet-aware logging
+--   [OK] Return value capture on RemoteFunctions
+--   [OK] Call stack capture (which script called the remote)
+--   [OK] Frequency analysis (detect heartbeats vs actions)
+--   [OK] Smart remote categorization
+--   [OK] Server-spawned instance tracking + correlation
+--   [OK] Property & Attribute change monitoring
+--   [OK] Deep serialization (depth 6, buffer support)
+--   [OK] Complete server script generation (runnable)
+--   [OK] Real-time logging toggle
+--   [OK] Export report to clipboard
+--   [OK] Auto timing correlation (remote call ? instance spawn)
 --
 -- USAGE:
 --   loadstring(readfile("ServerSpy.luau"))()
@@ -50,7 +50,7 @@ local CONFIG = {
 	monitorAttributes   = true,     -- monitor attribute changes on characters
 	monitorProperties   = true,     -- monitor key property changes
 	heartbeatThreshold  = 0.5,      -- calls/sec above this = likely heartbeat
-	correlationWindow   = 0.5,      -- seconds to link remote call → instance spawn
+	correlationWindow   = 0.5,      -- seconds to link remote call -> instance spawn
 }
 
 -- ============================================================
@@ -60,7 +60,7 @@ local isRunning = false
 local startTime = 0
 
 local logs = {}                 -- { time, remote, direction, args, argTypes, returnVal, stack, category }
-local remoteStats = {}          -- remotePath → { deep stats }
+local remoteStats = {}          -- remotePath -> { deep stats }
 local spawnedInstances = {}     -- server-spawned objects
 local attributeChanges = {}     -- attribute changes on player characters
 local connections = {}          -- active connections for cleanup
@@ -71,14 +71,14 @@ local oldNamecall = nil
 local namecallHooked = false
 
 -- ============================================================
--- SERIALIZATION ENGINE (v2 — deep, buffer-aware)
+-- SERIALIZATION ENGINE (v2 ? deep, buffer-aware)
 -- ============================================================
 
 local function safeSerialize(value, depth, seen)
 	depth = depth or 0
 	seen = seen or {}
 
-	if depth > CONFIG.maxSerializeDepth then return "⋯" end
+	if depth > CONFIG.maxSerializeDepth then return "..." end
 
 	local t = typeof(value)
 
@@ -104,7 +104,7 @@ local function safeSerialize(value, depth, seen)
 	elseif t == "CFrame" then
 		local p = value.Position
 		local rx, ry, rz = value:ToEulerAnglesYXZ()
-		return string.format("CFrame.new(%.2f,%.2f,%.2f) * angles(%.1f°,%.1f°,%.1f°)",
+		return string.format("CFrame.new(%.2f,%.2f,%.2f) * angles(%.1f?,%.1f?,%.1f?)",
 			p.X, p.Y, p.Z, math.deg(rx), math.deg(ry), math.deg(rz))
 	elseif t == "Color3" then
 		return string.format("Color3.fromRGB(%d, %d, %d)",
@@ -143,11 +143,11 @@ local function safeSerialize(value, depth, seen)
 				end)
 			end
 			return string.format("buffer[%d bytes: %s%s]",
-				size, table.concat(preview, " "), size > 16 and " ⋯" or "")
+				size, table.concat(preview, " "), size > 16 and " ..." or "")
 		end
 		return "buffer[empty]"
 	elseif t == "table" then
-		if seen[value] then return "{⟲ circular}" end
+		if seen[value] then return "{circular circular}" end
 		seen[value] = true
 
 		local parts = {}
@@ -168,7 +168,7 @@ local function safeSerialize(value, depth, seen)
 			for i = 1, maxIdx do
 				count += 1
 				if count > CONFIG.maxTableEntries then
-					table.insert(parts, string.format("⋯+%d more", maxIdx - count + 1))
+					table.insert(parts, string.format("...+%d more", maxIdx - count + 1))
 					break
 				end
 				table.insert(parts, safeSerialize(value[i], depth + 1, seen))
@@ -178,7 +178,7 @@ local function safeSerialize(value, depth, seen)
 			for k, v in pairs(value) do
 				count += 1
 				if count > CONFIG.maxTableEntries then
-					table.insert(parts, "⋯")
+					table.insert(parts, "...")
 					break
 				end
 				local keyStr
@@ -318,7 +318,7 @@ local function categorizeRemote(remotePath, direction, args, callCount, frequenc
 	end
 
 	-- By direction
-	if direction == "S→C" then return "SERVER_EVENT" end
+	if direction == "S->C" then return "SERVER_EVENT" end
 
 	return "ACTION"
 end
@@ -408,8 +408,8 @@ local function logCall(remotePath, direction, args, returnVal, stack)
 		local filter = CONFIG.realtimeFilter
 		if not filter or string.find(remotePath, filter, 1, true) then
 			local argsPreview = table.concat(entry.args, ", ")
-			if #argsPreview > 120 then argsPreview = string.sub(argsPreview, 1, 117) .. "⋯" end
-			local retStr = entry.returnVal and (" → " .. string.sub(tostring(entry.returnVal), 1, 60)) or ""
+			if #argsPreview > 120 then argsPreview = string.sub(argsPreview, 1, 117) .. "..." end
+			local retStr = entry.returnVal and (" -> " .. string.sub(tostring(entry.returnVal), 1, 60)) or ""
 			print(string.format("[ServerSpy] [%.1fs] %s %s(%s)%s",
 				entry.time, direction, remotePath, argsPreview, retStr))
 		end
@@ -453,26 +453,26 @@ local function hookRemote(remote)
 	pcall(function() remotePath = remote:GetFullName() end)
 
 	if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
-		-- S→C: OnClientEvent
+		-- S->C: OnClientEvent
 		local conn = remote.OnClientEvent:Connect(function(...)
-			logCall(remotePath, "S→C", {...}, nil, nil)
+			logCall(remotePath, "S->C", {...}, nil, nil)
 		end)
 		table.insert(connections, conn)
 
-		-- C→S: hookfunction FireServer
+		-- C->S: hookfunction FireServer
 		if hookfunction then
 			pcall(function()
 				local oldFire = remote.FireServer
 				hookfunction(oldFire, function(self, ...)
 					local stack = captureStack()
-					logCall(remotePath, "C→S", {...}, nil, stack)
+					logCall(remotePath, "C->S", {...}, nil, stack)
 					return oldFire(self, ...)
 				end)
 			end)
 		end
 
 	elseif remote:IsA("RemoteFunction") then
-		-- C→S: hookfunction InvokeServer (capture return value!)
+		-- C->S: hookfunction InvokeServer (capture return value!)
 		if hookfunction then
 			pcall(function()
 				local oldInvoke = remote.InvokeServer
@@ -480,18 +480,18 @@ local function hookRemote(remote)
 					local stack = captureStack()
 					local args = {...}
 					local results = {oldInvoke(self, ...)}
-					logCall(remotePath, "C→S", args, results[1], stack)
+					logCall(remotePath, "C->S", args, results[1], stack)
 					return unpack(results)
 				end)
 			end)
 		end
 
-		-- S→C: OnClientInvoke wrapper
+		-- S->C: OnClientInvoke wrapper
 		pcall(function()
 			local existingCB = remote.OnClientInvoke
 			if existingCB then
 				remote.OnClientInvoke = function(...)
-					logCall(remotePath, "S→C (invoke)", {...}, nil, nil)
+					logCall(remotePath, "S->C (invoke)", {...}, nil, nil)
 					return existingCB(...)
 				end
 			end
@@ -511,14 +511,14 @@ local function installNamecallHook()
 				local path = ""
 				pcall(function() path = self:GetFullName() end)
 				local stack = captureStack()
-				logCall(path, "C→S", {...}, nil, stack)
+				logCall(path, "C->S", {...}, nil, stack)
 			elseif method == "InvokeServer" and self:IsA("RemoteFunction") then
 				local path = ""
 				pcall(function() path = self:GetFullName() end)
 				local stack = captureStack()
 				local args = {...}
 				local results = {oldNamecall(self, ...)}
-				logCall(path, "C→S", args, results[1], stack)
+				logCall(path, "C->S", args, results[1], stack)
 				return unpack(results)
 			end
 
@@ -632,9 +632,9 @@ function ServerSpy:Start(options)
 	connections = {}
 	existingDescendants = {}
 
-	print("╔══════════════════════════════════════════╗")
-	print("║    SMARTCOPY ServerSpy v2 — STARTING     ║")
-	print("╚══════════════════════════════════════════╝")
+	print("+==========================================?")
+	print("|    SMARTCOPY ServerSpy v2 ? STARTING     |")
+	print("+==========================================?")
 
 	-- Hook existing remotes
 	local count = 0
@@ -664,7 +664,7 @@ function ServerSpy:Start(options)
 
 	print(string.format("[ServerSpy] Hooked %d remotes | namecall: %s | realtime: %s",
 		count,
-		namecallHooked and "✅" or "❌ (no hookmetamethod)",
+		namecallHooked and "[OK]" or "[FAIL] (no hookmetamethod)",
 		CONFIG.realtimeLog and "ON" or "OFF"))
 	print("[ServerSpy] Now play the game! Use ServerSpy:Stop() when done.")
 end
@@ -706,35 +706,35 @@ function ServerSpy:SetRealtime(enabled, filter)
 end
 
 -- ============================================================
--- GENERATE SERVER STUBS (v2 — much smarter)
+-- GENERATE SERVER STUBS (v2 ? much smarter)
 -- ============================================================
 
 function ServerSpy:GenerateServerStubs()
 	local stubs = {}
 
 	for remotePath, stat in pairs(remoteStats) do
-		local c2s = stat.directions["C→S"] or 0
-		if c2s == 0 then continue end -- only generate for client→server
+		local c2s = stat.directions["C->S"] or 0
+		if c2s == 0 then continue end -- only generate for client->server
 
 		local remoteName = string.match(remotePath, "([^%.]+)$") or remotePath
 		local freq = calculateFrequency(stat)
 		local interval = calculateInterval(stat)
-		local category = categorizeRemote(remotePath, "C→S", nil, stat.callCount, freq)
+		local category = categorizeRemote(remotePath, "C->S", nil, stat.callCount, freq)
 
 		local L = {} -- lines builder
 		local function add(s) table.insert(L, s) end
 
-		add("-- ════════════════════════════════════════════════════════")
+		add("-- ========================================================")
 		add("-- copy by Ndrew |")
 		add("-- https://bernadaclub.my.id")
-		add("-- ════════════════════════════════════════════════════════")
+		add("-- ========================================================")
 		add(string.format("-- Remote: %s", remotePath))
 		add(string.format("-- Category: %s", category))
-		add(string.format("-- Total observed calls: %d (C→S: %d, S→C: %d)",
-			stat.callCount, c2s, stat.directions["S→C"] or 0))
+		add(string.format("-- Total observed calls: %d (C->S: %d, S->C: %d)",
+			stat.callCount, c2s, stat.directions["S->C"] or 0))
 		add(string.format("-- Frequency: %.2f calls/sec | Interval: %.2fs", freq, interval))
 		add(string.format("-- First seen: %.1fs | Last seen: %.1fs", stat.firstSeen, stat.lastSeen))
-		add("-- ════════════════════════════════════════════════════════")
+		add("-- ========================================================")
 		add("")
 
 		-- Find or create remote
@@ -750,7 +750,7 @@ function ServerSpy:GenerateServerStubs()
 		-- Show all observed argument patterns
 		add("--[[ OBSERVED ARGUMENT PATTERNS:")
 		for pattern, count in pairs(stat.argPatterns) do
-			add(string.format("     (%s) × %d calls", pattern, count))
+			add(string.format("     (%s) ? %d calls", pattern, count))
 		end
 		add("]]")
 		add("")
@@ -759,10 +759,10 @@ function ServerSpy:GenerateServerStubs()
 		if #stat.exampleCalls > 0 then
 			add("--[[ EXAMPLE CALLS:")
 			for i, ex in ipairs(stat.exampleCalls) do
-				add(string.format("  %d. [%.1fs] %s → (%s)%s",
+				add(string.format("  %d. [%.1fs] %s -> (%s)%s",
 					i, ex.time, ex.direction,
 					table.concat(ex.args, ", "),
-					ex.returnVal and (" → return " .. tostring(ex.returnVal)) or ""))
+					ex.returnVal and (" -> return " .. tostring(ex.returnVal)) or ""))
 			end
 			add("]]")
 			add("")
@@ -787,7 +787,7 @@ function ServerSpy:GenerateServerStubs()
 		if hasReturns then
 			add("-- Return types observed:")
 			for retType, count in pairs(stat.returnTypes) do
-				add(string.format("--   %s × %d", retType, count))
+				add(string.format("--   %s ? %d", retType, count))
 			end
 			add("")
 		end
@@ -882,10 +882,10 @@ function ServerSpy:ExportReport()
 	local remoteCount = 0
 	for _ in pairs(remoteStats) do remoteCount += 1 end
 
-	add("╔══════════════════════════════════════════════════════════════╗")
-	add("║         SMARTCOPY — ServerSpy v2 FULL REPORT               ║")
-	add("║         copy by Ndrew | https://bernadaclub.my.id          ║")
-	add("╚══════════════════════════════════════════════════════════════╝")
+	add("+==============================================================?")
+	add("|         SMARTCOPY ? ServerSpy v2 FULL REPORT               |")
+	add("|         copy by Ndrew | https://bernadaclub.my.id          |")
+	add("+==============================================================?")
 	add("")
 	add(string.format("Duration:              %.1f seconds", duration))
 	add(string.format("Total calls logged:    %d", #logs))
@@ -895,13 +895,13 @@ function ServerSpy:ExportReport()
 	add(string.format("Namecall hook:         %s", namecallHooked and "Active" or "Not available"))
 	add("")
 
-	-- ── Category summary ──
-	add("═══ REMOTE CATEGORIES ═══")
+	-- -- Category summary --
+	add("=== REMOTE CATEGORIES ===")
 	add("")
 	local categories = {}
 	for remotePath, stat in pairs(remoteStats) do
 		local freq = calculateFrequency(stat)
-		local cat = categorizeRemote(remotePath, "C→S", nil, stat.callCount, freq)
+		local cat = categorizeRemote(remotePath, "C->S", nil, stat.callCount, freq)
 		categories[cat] = (categories[cat] or 0) + 1
 	end
 	for cat, count in pairs(categories) do
@@ -909,8 +909,8 @@ function ServerSpy:ExportReport()
 	end
 	add("")
 
-	-- ── Remote details ──
-	add("═══ REMOTES (by call count) ═══")
+	-- -- Remote details --
+	add("=== REMOTES (by call count) ===")
 	add("")
 
 	local sorted = {}
@@ -923,29 +923,29 @@ function ServerSpy:ExportReport()
 		local stat = entry.stat
 		local freq = calculateFrequency(stat)
 		local interval = calculateInterval(stat)
-		local cat = categorizeRemote(entry.path, "C→S", nil, stat.callCount, freq)
+		local cat = categorizeRemote(entry.path, "C->S", nil, stat.callCount, freq)
 
-		add(string.format("─── %d. %s ───", i, entry.path))
+		add(string.format("--? %d. %s --?", i, entry.path))
 		add(string.format("  Category:    %s", cat))
 		add(string.format("  Calls:       %d", stat.callCount))
 		add(string.format("  Frequency:   %.2f/sec (interval: %.2fs)", freq, interval))
 
 		for dir, count in pairs(stat.directions) do
-			add(string.format("  Direction:   %s × %d", dir, count))
+			add(string.format("  Direction:   %s ? %d", dir, count))
 		end
 
 		add("  Arg patterns:")
 		for pattern, count in pairs(stat.argPatterns) do
-			add(string.format("    (%s) × %d", pattern, count))
+			add(string.format("    (%s) ? %d", pattern, count))
 		end
 
 		if #stat.exampleCalls > 0 then
 			add("  Examples:")
 			for j, ex in ipairs(stat.exampleCalls) do
 				local argsStr = table.concat(ex.args, ", ")
-				if #argsStr > 100 then argsStr = string.sub(argsStr, 1, 97) .. "⋯" end
+				if #argsStr > 100 then argsStr = string.sub(argsStr, 1, 97) .. "..." end
 				add(string.format("    %d. [%.1fs] (%s)%s", j, ex.time, argsStr,
-					ex.returnVal and (" → " .. string.sub(tostring(ex.returnVal), 1, 50)) or ""))
+					ex.returnVal and (" -> " .. string.sub(tostring(ex.returnVal), 1, 50)) or ""))
 			end
 		end
 
@@ -961,13 +961,13 @@ function ServerSpy:ExportReport()
 		add("")
 	end
 
-	-- ── Spawned instances ──
+	-- -- Spawned instances --
 	if #spawnedInstances > 0 then
-		add("═══ SERVER-SPAWNED INSTANCES ═══")
+		add("=== SERVER-SPAWNED INSTANCES ===")
 		add("")
 		for i, data in ipairs(spawnedInstances) do
 			if i > 300 then
-				add(string.format("  ⋯ and %d more", #spawnedInstances - 300))
+				add(string.format("  ... and %d more", #spawnedInstances - 300))
 				break
 			end
 			local propsStr = ""
@@ -983,8 +983,8 @@ function ServerSpy:ExportReport()
 
 			-- Correlate: what remote was called around this time?
 			for _, log in ipairs(logs) do
-				if math.abs(log.time - data.time) <= CONFIG.correlationWindow and log.direction == "C→S" then
-					add(string.format("    ↳ correlated remote: %s (%s)", log.remote, table.concat(log.args, ", ")))
+				if math.abs(log.time - data.time) <= CONFIG.correlationWindow and log.direction == "C->S" then
+					add(string.format("    -> correlated remote: %s (%s)", log.remote, table.concat(log.args, ", ")))
 					break
 				end
 			end
@@ -992,15 +992,15 @@ function ServerSpy:ExportReport()
 		add("")
 	end
 
-	-- ── Attribute changes ──
+	-- -- Attribute changes --
 	if #attributeChanges > 0 then
-		add("═══ ATTRIBUTE CHANGES ═══")
+		add("=== ATTRIBUTE CHANGES ===")
 		add("")
 		local shown = 0
 		for _, change in ipairs(attributeChanges) do
 			shown += 1
 			if shown > 100 then
-				add(string.format("  ⋯ and %d more", #attributeChanges - 100))
+				add(string.format("  ... and %d more", #attributeChanges - 100))
 				break
 			end
 			add(string.format("  [%.1fs] %s.%s = %s",
@@ -1009,10 +1009,10 @@ function ServerSpy:ExportReport()
 		add("")
 	end
 
-	-- ── Generated stubs summary ──
+	-- -- Generated stubs summary --
 	local stubs = self:GenerateServerStubs()
 	if #stubs > 0 then
-		add(string.format("═══ %d SERVER SCRIPT STUBS GENERATED ═══", #stubs))
+		add(string.format("=== %d SERVER SCRIPT STUBS GENERATED ===", #stubs))
 		add("")
 		for _, stub in ipairs(stubs) do
 			add(string.format("  [%s] %s (%d calls, %.1f/sec)",
@@ -1034,10 +1034,10 @@ function ServerSpy:CopyReport()
 	pcall(function()
 		if setclipboard then
 			setclipboard(report)
-			print("[ServerSpy] Report copied to clipboard! ✅")
+			print("[ServerSpy] Report copied to clipboard! [OK]")
 		elseif toclipboard then
 			toclipboard(report)
-			print("[ServerSpy] Report copied to clipboard! ✅")
+			print("[ServerSpy] Report copied to clipboard! [OK]")
 		else
 			warn("[ServerSpy] No clipboard function available. Report printed above.")
 		end
@@ -1056,10 +1056,10 @@ function ServerSpy:CopyStubs()
 	pcall(function()
 		if setclipboard then
 			setclipboard(text)
-			print(string.format("[ServerSpy] %d server stubs copied to clipboard! ✅", #stubs))
+			print(string.format("[ServerSpy] %d server stubs copied to clipboard! [OK]", #stubs))
 		elseif toclipboard then
 			toclipboard(text)
-			print(string.format("[ServerSpy] %d server stubs copied to clipboard! ✅", #stubs))
+			print(string.format("[ServerSpy] %d server stubs copied to clipboard! [OK]", #stubs))
 		else
 			print(text)
 		end

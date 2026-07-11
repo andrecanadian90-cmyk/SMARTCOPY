@@ -1,4 +1,4 @@
-﻿--!optimize 2
+--!optimize 2
 -- ============================================================
 -- SMARTCOPY :: TerrainExtractor v2 (MAX LEVEL)
 -- copy by Ndrew | https://bernadaclub.my.id
@@ -7,16 +7,16 @@
 -- executable Luau code for Studio restoration.
 --
 -- Features:
---   ✅ Full voxel extraction (Materials + Occupancy)
---   ✅ Adaptive chunk sizing (auto-detect optimal)
---   ✅ Smart empty chunk skip
---   ✅ Water terrain handling
---   ✅ RLE compression for output (massive size reduction)
---   ✅ Multiple output formats (Luau, Compact JSON, Raw)
---   ✅ Progress callback + ETA estimation
---   ✅ Clipboard export
---   ✅ Stats & memory tracking
---   ✅ Resume support (partial extraction)
+--   [OK] Full voxel extraction (Materials + Occupancy)
+--   [OK] Adaptive chunk sizing (auto-detect optimal)
+--   [OK] Smart empty chunk skip
+--   [OK] Water terrain handling
+--   [OK] RLE compression for output (massive size reduction)
+--   [OK] Multiple output formats (Luau, Compact JSON, Raw)
+--   [OK] Progress callback + ETA estimation
+--   [OK] Clipboard export
+--   [OK] Stats & memory tracking
+--   [OK] Resume support (partial extraction)
 -- ============================================================
 
 local TerrainExtractor = {}
@@ -93,7 +93,7 @@ end
 
 -- ============================================================
 -- RLE COMPRESSION (for serialized output)
--- Compresses sequences like "Air,Air,Air,Air" → "Air×4"
+-- Compresses sequences like "Air,Air,Air,Air" -> "Air?4"
 -- ============================================================
 
 local function rleCompressMaterials(flatList)
@@ -108,7 +108,7 @@ local function rleCompressMaterials(flatList)
 			count += 1
 		else
 			if count > 1 then
-				table.insert(compressed, string.format("%s×%d", current, count))
+				table.insert(compressed, string.format("%s?%d", current, count))
 			else
 				table.insert(compressed, current)
 			end
@@ -119,7 +119,7 @@ local function rleCompressMaterials(flatList)
 
 	-- Last run
 	if count > 1 then
-		table.insert(compressed, string.format("%s×%d", current, count))
+		table.insert(compressed, string.format("%s?%d", current, count))
 	else
 		table.insert(compressed, current)
 	end
@@ -139,7 +139,7 @@ local function rleCompressOccupancy(flatList)
 			count += 1
 		else
 			if count > 1 then
-				table.insert(compressed, string.format("%s×%d", current, count))
+				table.insert(compressed, string.format("%s?%d", current, count))
 			else
 				table.insert(compressed, current)
 			end
@@ -149,7 +149,7 @@ local function rleCompressOccupancy(flatList)
 	end
 
 	if count > 1 then
-		table.insert(compressed, string.format("%s×%d", current, count))
+		table.insert(compressed, string.format("%s?%d", current, count))
 	else
 		table.insert(compressed, current)
 	end
@@ -201,13 +201,13 @@ function TerrainExtractor:Extract(options)
 	local totalChunks = chunksX * chunksY * chunksZ
 	stats.totalChunks = totalChunks
 
-	print("╔══════════════════════════════════════════╗")
-	print("║   SMARTCOPY TerrainExtractor v2          ║")
-	print("╚══════════════════════════════════════════╝")
-	print(string.format("  Bounds: (%.0f,%.0f,%.0f) → (%.0f,%.0f,%.0f)",
+	print("+==========================================?")
+	print("|   SMARTCOPY TerrainExtractor v2          |")
+	print("+==========================================?")
+	print(string.format("  Bounds: (%.0f,%.0f,%.0f) -> (%.0f,%.0f,%.0f)",
 		minPos.X, minPos.Y, minPos.Z, maxPos.X, maxPos.Y, maxPos.Z))
-	print(string.format("  Size: %.0f×%.0f×%.0f studs", size.X, size.Y, size.Z))
-	print(string.format("  Chunks: %d (%d×%d×%d) @ resolution %d", totalChunks, chunksX, chunksY, chunksZ, resolution))
+	print(string.format("  Size: %.0f?%.0f?%.0f studs", size.X, size.Y, size.Z))
+	print(string.format("  Chunks: %d (%d?%d?%d) @ resolution %d", totalChunks, chunksX, chunksY, chunksZ, resolution))
 	print("")
 
 	local processed = 0
@@ -285,9 +285,9 @@ function TerrainExtractor:Extract(options)
 	if onProgress then onProgress(1) end
 
 	print("")
-	print(string.format("  ✅ Done! %d non-empty chunks / %d total (%.1fs)",
+	print(string.format("  [OK] Done! %d non-empty chunks / %d total (%.1fs)",
 		stats.nonEmptyChunks, stats.totalChunks, stats.extractionTime))
-	print(string.format("  📊 %d non-air voxels | %d water chunks",
+	print(string.format("  ? %d non-air voxels | %d water chunks",
 		stats.totalVoxels, stats.waterChunks))
 
 	return storedChunks
@@ -309,14 +309,14 @@ function TerrainExtractor:SerializeForReplay()
 	local O = {}
 	local function add(s) table.insert(O, s) end
 
-	add("-- ════════════════════════════════════════════════════════")
-	add("-- SMARTCOPY — Terrain Restore Script")
+	add("-- ========================================================")
+	add("-- SMARTCOPY ? Terrain Restore Script")
 	add("-- copy by Ndrew | https://bernadaclub.my.id")
 	add(string.format("-- Chunks: %d | Voxels: %d | Water chunks: %d",
 		stats.nonEmptyChunks, stats.totalVoxels, stats.waterChunks))
-	add(string.format("-- Terrain size: %.0f×%.0f×%.0f studs",
+	add(string.format("-- Terrain size: %.0f?%.0f?%.0f studs",
 		stats.terrainSize.X, stats.terrainSize.Y, stats.terrainSize.Z))
-	add("-- ════════════════════════════════════════════════════════")
+	add("-- ========================================================")
 	add("")
 	add("local terrain = workspace.Terrain")
 	add("terrain:Clear()")
@@ -325,11 +325,11 @@ function TerrainExtractor:SerializeForReplay()
 	add("")
 
 	-- RLE decoder function
-	add("-- RLE decoder: expands 'Air×10' back into 10 entries of M.Air")
+	add("-- RLE decoder: expands 'Air?10' back into 10 entries of M.Air")
 	add("local function decodeRLE(compressed, isMaterial)")
 	add("	local result = {}")
 	add("	for _, entry in ipairs(compressed) do")
-	add("		local name, count = string.match(entry, '(.+)×(%d+)')")
+	add("		local name, count = string.match(entry, '(.+)?(%d+)')")
 	add("		if name and count then")
 	add("			count = tonumber(count)")
 	add("			local val = isMaterial and M[name] or tonumber(name)")
@@ -430,7 +430,7 @@ function TerrainExtractor:SerializeForReplay()
 		add("")
 	end
 
-	add(string.format("print('[SMARTCOPY] Terrain restored! %d chunks ✅')", #storedChunks))
+	add(string.format("print('[SMARTCOPY] Terrain restored! %d chunks [OK]')", #storedChunks))
 
 	-- Calculate compression ratio
 	if totalUncompressed > 0 then
@@ -517,12 +517,12 @@ function TerrainExtractor:ExportReport()
 	local L = {}
 	local function add(s) table.insert(L, s) end
 
-	add("╔══════════════════════════════════════════╗")
-	add("║  SMARTCOPY TerrainExtractor v2 Report    ║")
-	add("║  copy by Ndrew | bernadaclub.my.id       ║")
-	add("╚══════════════════════════════════════════╝")
+	add("+==========================================?")
+	add("|  SMARTCOPY TerrainExtractor v2 Report    |")
+	add("|  copy by Ndrew | bernadaclub.my.id       |")
+	add("+==========================================?")
 	add("")
-	add(string.format("  Terrain size:       %.0f×%.0f×%.0f studs", stats.terrainSize.X, stats.terrainSize.Y, stats.terrainSize.Z))
+	add(string.format("  Terrain size:       %.0f?%.0f?%.0f studs", stats.terrainSize.X, stats.terrainSize.Y, stats.terrainSize.Z))
 	add(string.format("  Total chunks:       %d", stats.totalChunks))
 	add(string.format("  Non-empty chunks:   %d", stats.nonEmptyChunks))
 	add(string.format("  Water chunks:       %d", stats.waterChunks))
