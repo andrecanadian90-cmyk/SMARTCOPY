@@ -33,9 +33,13 @@ local REPO_BASE = "https://raw.githubusercontent.com/andrecanadian90-cmyk/SMARTC
 -- Loads modules from GitHub
 -- ============================================================
 local function loadModule(name)
+	-- Generate a random token to bypass HTTP cache
+	local cacheBuster = "?nocache=" .. tostring(math.random(1, 100000)) .. "_" .. tostring(os.time())
+	local url = REPO_BASE .. "modules/" .. name .. ".luau" .. cacheBuster
+	
 	local ok, module = pcall(function()
 		return loadstring(
-			game:HttpGet(REPO_BASE .. "modules/" .. name .. ".luau", true),
+			game:HttpGet(url, true),
 			"SMARTCOPY/" .. name
 		)()
 	end)
@@ -45,7 +49,7 @@ local function loadModule(name)
 		return module
 	end
 
-	warn("[SMARTCOPY] Failed to load module from repo: " .. name)
+	warn("[SMARTCOPY] Failed to load module: " .. name .. " — Error: " .. tostring(module))
 	return nil
 end
 
