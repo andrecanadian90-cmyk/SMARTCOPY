@@ -47,8 +47,10 @@ function WatermarkReplacer:Run(header, watermarks)
 	local processed = 0
 	for _, inst in ipairs(game:GetDescendants()) do
 		if not inst:IsA("LuaSourceContainer") then continue end
-		local src = inst.Source
-		if src == "" then continue end
+		
+		-- Safely read source to prevent permission crashes (e.g. on CoreGui scripts)
+		local ok, src = pcall(function() return inst.Source end)
+		if not ok or not src or src == "" then continue end
 
 		stats.total += 1
 
@@ -86,8 +88,16 @@ function WatermarkReplacer:Run(header, watermarks)
 			table.remove(bodyLines, 1)
 		end
 
-		inst.Source = headerStr .. "\n\n" .. table.concat(bodyLines, "\n")
-		stats.replaced += 1
+		-- Safely write source
+		local writeOk = pcall(function()
+			inst.Source = headerStr .. "\n\n" .. table.concat(bodyLines, "\n")
+		end)
+
+		if writeOk then
+			stats.replaced += 1
+		else
+			stats.skipped += 1
+		end
 
 		processed += 1
 		if processed % 50 == 0 then

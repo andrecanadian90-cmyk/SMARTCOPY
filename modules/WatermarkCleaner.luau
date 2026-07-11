@@ -18,11 +18,14 @@ function WatermarkCleaner:Run()
 	local cleaned = 0
 	local total = 0
 
+	local processed = 0
 	for _, inst in ipairs(game:GetDescendants()) do
 		if inst:IsA("LuaSourceContainer") then
+			-- Safely read source to prevent permission crashes (e.g. on CoreGui scripts)
+			local ok, src = pcall(function() return inst.Source end)
+			if not ok or not src or src == "" then continue end
+
 			total += 1
-			local src = inst.Source
-			if src == "" then continue end
 
 			local lines = string.split(src, "\n")
 			local newLines = {}
@@ -53,8 +56,18 @@ function WatermarkCleaner:Run()
 			end
 
 			if removedAny then
-				inst.Source = table.concat(newLines, "\n")
-				cleaned += 1
+				-- Safely write source
+				local writeOk = pcall(function()
+					inst.Source = table.concat(newLines, "\n")
+				end)
+				if writeOk then
+					cleaned += 1
+				end
+			end
+
+			processed += 1
+			if processed % 50 == 0 then
+				task.wait() -- yield to prevent game freeze
 			end
 		end
 	end
