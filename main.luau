@@ -266,10 +266,23 @@ return function(userOptions)
 		end)
 	end
 
-	local totalPhases = 5
-	if options.ServerSpy then totalPhases += 1 end
-	if options.FixUnions then totalPhases += 1 end
-	local currentPhase = 1
+	-- Calculate only active phases dynamically
+	local activePhases = {}
+	if options.ServerSpy then table.insert(activePhases, "ServerSpy") end
+	if options.FixUnions then table.insert(activePhases, "FixUnions") end
+	if options.IncludeTerrain then table.insert(activePhases, "IncludeTerrain") end
+	if options.IncludeAssets then table.insert(activePhases, "IncludeAssets") end
+	table.insert(activePhases, "SaveInstance") -- Always runs
+	if options.ReplaceWatermark then table.insert(activePhases, "ReplaceWatermark") end
+	if serverSpy or options.ServerSpy then table.insert(activePhases, "ServerStubs") end
+
+	local totalPhases = #activePhases
+	local currentPhase = 0
+
+	local function getNextPhaseNum()
+		currentPhase += 1
+		return currentPhase
+	end
 
 	-- ========================================
 	-- Phase 1: ServerSpy (if enabled)
@@ -277,7 +290,8 @@ return function(userOptions)
 	-- ========================================
 	local serverSpy
 	if options.ServerSpy then
-		updateUI(string.format("Phase %d/%d: Starting ServerSpy...", currentPhase, totalPhases), 0, "Intercepting Remote communications")
+		local phaseNum = getNextPhaseNum()
+		updateUI(string.format("Phase %d/%d: Starting ServerSpy...", phaseNum, totalPhases), 0, "Intercepting Remote communications")
 		print("[SMARTCOPY] Phase: Starting ServerSpy monitoring...")
 
 		local ok, mod = pcall(loadModule, "ServerSpy")
@@ -288,7 +302,7 @@ return function(userOptions)
 			print(string.format("[SMARTCOPY] ServerSpy active — monitoring for %ds...", options.ServerSpyDuration))
 			for i = 1, options.ServerSpyDuration do
 				task.wait(1)
-				updateUI(string.format("Phase %d/%d: Monitoring remotes...", currentPhase, totalPhases), (i / options.ServerSpyDuration) * 0.15,
+				updateUI(string.format("Phase %d/%d: Monitoring remotes...", phaseNum, totalPhases), (i / options.ServerSpyDuration) * 0.15,
 					string.format("Listening for %ds — play the game normally!\nCaptured: %d calls",
 						options.ServerSpyDuration - i, #serverSpy:GetLogs()))
 			end
@@ -298,7 +312,6 @@ return function(userOptions)
 		else
 			print("[SMARTCOPY] ServerSpy module not available, skipping...")
 		end
-		currentPhase += 1
 	end
 
 	-- ========================================
@@ -306,7 +319,8 @@ return function(userOptions)
 	-- Must run before USSI save to preserve models
 	-- ========================================
 	if options.FixUnions then
-		updateUI(string.format("Phase %d/%d: Fixing Unions...", currentPhase, totalPhases), 0.2, "Converting UnionOperations to MeshParts")
+		local phaseNum = getNextPhaseNum()
+		updateUI(string.format("Phase %d/%d: Fixing Unions...", phaseNum, totalPhases), 0.2, "Converting UnionOperations to MeshParts")
 		print("[SMARTCOPY] Phase: Converting Unions to MeshParts...")
 
 		local ok, mod = pcall(loadModule, "UnionFixer")
@@ -316,7 +330,6 @@ return function(userOptions)
 		else
 			print("[SMARTCOPY] UnionFixer module not available, skipping...")
 		end
-		currentPhase += 1
 	end
 
 	-- ========================================
@@ -324,7 +337,8 @@ return function(userOptions)
 	-- ========================================
 	local terrainData
 	if options.IncludeTerrain then
-		updateUI(string.format("Phase %d/%d: Extracting terrain...", currentPhase, totalPhases), 0.35, "Reading voxel data...")
+		local phaseNum = getNextPhaseNum()
+		updateUI(string.format("Phase %d/%d: Extracting terrain...", phaseNum, totalPhases), 0.35, "Reading voxel data...")
 		print("[SMARTCOPY] Phase: Extracting terrain voxels...")
 
 		local ok, mod = pcall(loadModule, "TerrainExtractor")
@@ -348,7 +362,6 @@ return function(userOptions)
 		else
 			print("[SMARTCOPY] TerrainExtractor not available, skipping...")
 		end
-		currentPhase += 1
 	end
 
 	-- ========================================
@@ -356,7 +369,8 @@ return function(userOptions)
 	-- ========================================
 	local assetData
 	if options.IncludeAssets then
-		updateUI(string.format("Phase %d/%d: Scanning assets...", currentPhase, totalPhases), 0.5, "Finding meshes, textures, audio...")
+		local phaseNum = getNextPhaseNum()
+		updateUI(string.format("Phase %d/%d: Scanning assets...", phaseNum, totalPhases), 0.5, "Finding meshes, textures, audio...")
 		print("[SMARTCOPY] Phase: Scanning for assets...")
 
 		local ok, mod = pcall(loadModule, "AssetRipper")
@@ -382,14 +396,14 @@ return function(userOptions)
 		else
 			print("[SMARTCOPY] AssetRipper not available, skipping...")
 		end
-		currentPhase += 1
 	end
 
 	-- ========================================
 	-- Phase 5: Save Instance (USSI)
 	-- The core map save — this kicks player if SafeMode = true
 	-- ========================================
-	updateUI(string.format("Phase %d/%d: Saving instance tree...", currentPhase, totalPhases), 0.7, "This is the main save — player may be kicked for safety!")
+	local phaseNum = getNextPhaseNum()
+	updateUI(string.format("Phase %d/%d: Saving instance tree...", phaseNum, totalPhases), 0.7, "This is the main save — player may be kicked for safety!")
 	print("[SMARTCOPY] Phase: Running SaveInstance (USSI engine)...")
 
 	local synsaveinstance = loadUSSI()
@@ -421,14 +435,14 @@ return function(userOptions)
 	else
 		warn("[SMARTCOPY] CRITICAL: Could not load USSI engine!")
 	end
-	currentPhase += 1
 
 	-- ========================================
 	-- Phase 6: Watermark Replacer (if enabled)
 	-- Runs after save so it can modify saved script sources
 	-- ========================================
 	if options.ReplaceWatermark then
-		updateUI(string.format("Phase %d/%d: Branding scripts...", currentPhase, totalPhases), 0.85, "Applying 'copy by Ndrew' watermark")
+		local phaseNum = getNextPhaseNum()
+		updateUI(string.format("Phase %d/%d: Branding scripts...", phaseNum, totalPhases), 0.85, "Applying 'copy by Ndrew' watermark")
 		print("[SMARTCOPY] Phase: Replacing watermarks...")
 
 		local ok, mod = pcall(loadModule, "WatermarkReplacer")
@@ -438,14 +452,14 @@ return function(userOptions)
 		else
 			print("[SMARTCOPY] WatermarkReplacer not available, skipping...")
 		end
-		currentPhase += 1
 	end
 
 	-- ========================================
 	-- Phase 7: Generate Server Stubs (if ServerSpy was used)
 	-- ========================================
 	if serverSpy then
-		updateUI(string.format("Phase %d/%d: Generating server stubs...", currentPhase, totalPhases), 0.95, "Reconstructing server logic...")
+		local phaseNum = getNextPhaseNum()
+		updateUI(string.format("Phase %d/%d: Generating server stubs...", phaseNum, totalPhases), 0.95, "Reconstructing server logic...")
 		print("[SMARTCOPY] Phase: Generating server script stubs...")
 
 		local report = serverSpy:ExportReport()
