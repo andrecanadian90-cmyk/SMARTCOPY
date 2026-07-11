@@ -515,6 +515,58 @@ function AssetRipper:ExportManifestJSON()
 	return ok and json or nil
 end
 
+local function batchResolve(ids)
+	local http_request = request or http_request or (http and http.request) or (syn and syn.request)
+	if not http_request then return {} end
+	
+	local mapping = {}
+	local chunkSize = 100
+	
+	for startIdx = 1, #ids, chunkSize do
+		local endIdx = math.min(startIdx + chunkSize - 1, #ids)
+		local payload = {}
+		for i = startIdx, endIdx do
+			table.insert(payload, {
+				assetId = ids[i],
+				requestId = tostring(ids[i])
+			})
+		end
+		
+		local ok, res = pcall(function()
+			return http_request({
+				Url = "https://assetdelivery.roblox.com/v2/assets/batch",
+				Method = "POST",
+				Headers = {
+					["Content-Type"] = "application/json",
+					["User-Agent"] = "Roblox/WinInet"
+				},
+				Body = HttpService:JSONEncode(payload)
+			})
+		end)
+		
+		if ok and res and res.StatusCode == 200 then
+			local success, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
+			if success and type(data) == "table" then
+				for _, item in ipairs(data) do
+					local assetId = tonumber(item.requestId)
+					if assetId and item.locations then
+						for _, loc in ipairs(item.locations) do
+							if loc.location and loc.location ~= "" then
+								mapping[assetId] = loc.location
+								break
+							end
+						end
+					end
+				end
+			end
+		end
+		
+		task.wait(0.1) -- small yield between chunks
+	end
+	
+	return mapping
+end
+
 function AssetRipper:DownloadAllLocal(folderName, onProgress)
 	local list = self:GetDownloadList()
 	local http_request = request or http_request or (http and http.request) or (syn and syn.request)
@@ -525,13 +577,27 @@ function AssetRipper:DownloadAllLocal(folderName, onProgress)
 
 	pcall(makefolder, folderName .. "/assets")
 	
+	-- 1. Gather all unique IDs
+	local ids = {}
+	local idMap = {}
+	for _, a in ipairs(list) do
+		if a.type == "Mesh" or a.type == "Texture" or a.type == "Audio" or a.type == "Image" then
+			if not idMap[a.id] then
+				idMap[a.id] = a
+				table.insert(ids, a.id)
+			end
+		end
+	end
+	
+	-- 2. Resolve them to CDN URLs via batch endpoint in game client context
+	local resolved = batchResolve(ids)
+	
 	local total = #list
 	local downloaded = 0
 	local failed = 0
 	local skipped = 0
 
 	for i, a in ipairs(list) do
-		-- Only download Meshes, Textures, Audio, Images (critical rendering types)
 		if a.type == "Mesh" or a.type == "Texture" or a.type == "Audio" or a.type == "Image" then
 			local typeDir = folderName .. "/assets/" .. a.type
 			pcall(makefolder, typeDir)
@@ -540,18 +606,22 @@ function AssetRipper:DownloadAllLocal(folderName, onProgress)
 			if isfile(filePath) then
 				skipped += 1
 			else
-				local url = "https://assetdelivery.roblox.com/v1/asset/?id=" .. tostring(a.id)
-				local ok, res = pcall(function()
-					return http_request({
-						Url = url,
-						Method = "GET"
-					})
-				end)
+				local cdnUrl = resolved[a.id]
+				if cdnUrl then
+					local ok, res = pcall(function()
+						return http_request({
+							Url = cdnUrl,
+							Method = "GET"
+						})
+					end)
 
-				if ok and res and res.StatusCode == 200 and res.Body then
-					local writeOk = pcall(writefile, filePath, res.Body)
-					if writeOk then
-						downloaded += 1
+					if ok and res and res.StatusCode == 200 and res.Body then
+						local writeOk = pcall(writefile, filePath, res.Body)
+						if writeOk then
+							downloaded += 1
+						else
+							failed += 1
+						end
 					else
 						failed += 1
 					end
@@ -565,7 +635,6 @@ function AssetRipper:DownloadAllLocal(folderName, onProgress)
 			pcall(onProgress, i / total, downloaded, failed, skipped)
 		end
 		
-		-- Small yield to prevent thread freeze
 		if i % 10 == 0 then
 			task.wait()
 		end
