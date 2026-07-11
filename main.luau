@@ -457,7 +457,7 @@ return function(userOptions)
 
 			if options.DownloadAssets then
 				local dlScript = assetRipper:GenerateDownloadScript()
-				pcall(writefile, folderName .. "/SMARTCOPY_Download.ps1", dlScript)
+				pcall(writefile, folderName .. "/SMARTCOPY_Download_ps1.txt", dlScript)
 			end
 		else
 			print("[SMARTCOPY] AssetRipper not available, skipping...")
@@ -487,8 +487,8 @@ return function(userOptions)
 			
 			-- 2. Generate Python local server
 			local pyServer = assetRipper:GeneratePythonServer()
-			pcall(writefile, folderName .. "/start_asset_server.py", pyServer)
-			print("[SMARTCOPY] Python Local Asset Server written to: " .. folderName .. "/start_asset_server.py")
+			pcall(writefile, folderName .. "/start_asset_server_py.txt", pyServer)
+			print("[SMARTCOPY] Python Local Asset Server written to: " .. folderName .. "/start_asset_server_py.txt")
 			
 			-- 3. Traverse and replace URLs in-game
 			updateUI(nil, 0.68, "Redirecting game tree assets to localhost:8000...")
@@ -655,10 +655,10 @@ return function(userOptions)
 		print("|    ? SMARTCOPY_Assets.json ? Asset manifest             |")
 	end
 	if options.DownloadAssets then
-		print("|    ? SMARTCOPY_Download.ps1 ? Asset download script     |")
+		print("|    ? SMARTCOPY_Download_ps1.txt ? Asset download script     |")
 	end
 	if options.BypassAssetPrivacy then
-		print("|    ? start_asset_server.py ? Local asset server python  |")
+		print("|    ? start_asset_server_py.txt ? Local asset server python  |")
 	end
 	if serverSpy then
 		print("|    ? SMARTCOPY_ServerSpy_Report.txt ? Remote logs       |")
